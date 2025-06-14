@@ -31,7 +31,7 @@ pub enum TokenType {
     LessEq,
 }
 
-#[derive(Debug)]
+#[derive(Clone, Debug)]
 pub struct Token {
     pub token_type: TokenType,
     pub literal: String,

@@ -1,4 +1,4 @@
-mod test;
+mod tests;
 
 use std::collections::HashMap;
 
@@ -38,7 +38,7 @@ impl Lexer {
             ';' => Token::new(TokenType::Semicolon, ";"),
             '\0' => Token::new(TokenType::Eof, ""),
             c => {
-                if c.is_alphabetic() || Self::is_underscore(c) {
+                let token = if c.is_alphabetic() || Self::is_underscore(c) {
                     let word = self.read_word();
                     let token_type = Self::lookup_ident(&word);
                     Token::new(token_type, &word)
@@ -47,7 +47,13 @@ impl Lexer {
                     Token::new(TokenType::Int, &number)
                 } else {
                     Token::new(TokenType::Illegal, &c.to_string())
-                }
+                };
+                // Unread a character here because the functions used here (`read_word`, `read_number`)
+                // reads until the first character NOT in the literal. Then the `read_char` call below
+                // would then skip this character entirely, so we add a `unread_char` call here to
+                // not skip it.
+                self.unread_char();
+                token
             }
         };
         self.read_char();
@@ -61,6 +67,18 @@ impl Lexer {
             self.cur_char = self.input[self.read_position];
             self.cur_position = self.read_position;
             self.read_position += 1;
+        }
+    }
+
+    /// Unreads a char by moving the position pointers back by 1.
+    fn unread_char(&mut self) {
+        if self.cur_position == 0 {
+            self.cur_char = '\0';
+            self.read_position = 0;
+        } else {
+            self.read_position = self.cur_position;
+            self.cur_position -= 1;
+            self.cur_char = self.input[self.cur_position];
         }
     }
 

@@ -1,4 +1,6 @@
-use super::TokenType;
+#[cfg(test)]
+use crate::token::TokenType;
+#[cfg(test)]
 use crate::lexer::Lexer;
 
 #[test]
@@ -118,6 +120,8 @@ fn test_next_token_complex() {
 
     for i in 0..expected_token_types.len() {
         let token = lexer.next_token();
+        println!("Token {}: {:?} (literal: '{}'), Expected: {:?} (literal: '{}')",
+                 i, token.token_type, token.literal, expected_token_types[i], expected_token_literals[i]);
         assert_eq!(token.token_type, expected_token_types[i]);
         assert_eq!(token.literal, expected_token_literals[i]);
     }

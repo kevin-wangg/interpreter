@@ -6,7 +6,7 @@ use crate::{
     token::{Token, TokenType},
 };
 
-struct Parser {
+pub struct Parser {
     lexer: Lexer,
     cur_token: Token,
     peek_token: Token,

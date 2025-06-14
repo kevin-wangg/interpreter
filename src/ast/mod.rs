@@ -1,42 +1,62 @@
+use std::any::Any;
+
 use crate::token::Token;
 
 /// Represents a node in the AST. Each node implements the `token_literal` function, which
 /// is mainly used for debugging purposes. It returns the literal of the token associated
 /// with this node.
-trait Node {
+pub trait Node {
     fn token_literal(&self) -> String;
+    fn as_any(&self) -> &dyn Any;
 }
 
-trait Statement: Node {}
+pub trait Statement: Node {}
 
-trait Expression: Node {}
+pub trait Expression: Node {}
 
 pub struct Program {
-    statements: Vec<Box<dyn Statement>>
+    pub statements: Vec<Box<dyn Statement>>,
 }
 
-struct Identifier {
-    token: Token,
-    value: String
+pub struct Identifier {
+    pub token: Token,
+    pub value: String,
+}
+
+impl Identifier {
+    pub fn new(token: Token, value: &str) -> Self {
+        Identifier {
+            token,
+            value: value.to_string(),
+        }
+    }
 }
 
 impl Node for Identifier {
     fn token_literal(&self) -> String {
         self.token.literal.clone()
     }
+
+    fn as_any(&self) -> &dyn Any {
+        self
+    }
 }
 
 impl Expression for Identifier {}
 
-struct LetStatement {
-    token: Token,
-    name: Identifier,
-    value: Box<dyn Expression>,
+pub struct LetStatement {
+    pub token: Token,
+    pub name: Identifier,
+    pub value: Box<dyn Expression>,
 }
 
 impl Node for LetStatement {
     fn token_literal(&self) -> String {
         self.token.literal.clone()
+    }
+
+    fn as_any(&self) -> &dyn Any {
+        self
     }
 }
 

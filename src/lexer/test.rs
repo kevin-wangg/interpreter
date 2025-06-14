@@ -61,7 +61,7 @@ fn test_next_token_complex() {
     let input = "
         let five = 5;
         let ten = 10;
-        let add = fn(x, y) {
+        let add = fun(x, y) {
             x + y;
         };
 
@@ -111,7 +111,7 @@ fn test_next_token_complex() {
     ];
 
     let expected_token_literals = vec![
-        "let", "five", "=", "5", ";", "let", "ten", "=", "10", ";", "let", "add", "=", "fn", "(",
+        "let", "five", "=", "5", ";", "let", "ten", "=", "10", ";", "let", "add", "=", "fun", "(",
         "x", ",", "y", ")", "{", "x", "+", "y", ";", "}", ";", "let", "result", "=", "add", "(",
         "five", ",", "ten", ")", ";", "", // Eof literal is an empty string
     ];

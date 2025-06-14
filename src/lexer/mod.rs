@@ -42,6 +42,9 @@ impl Lexer {
                     let word = self.read_word();
                     let token_type = Self::lookup_ident(&word);
                     Token::new(token_type, &word)
+                } else if c.is_numeric() {
+                    let number = self.read_number();
+                    Token::new(TokenType::Int, &number)
                 } else {
                     Token::new(TokenType::Illegal, &c.to_string())
                 }
@@ -68,6 +71,17 @@ impl Lexer {
             self.read_char();
         }
         word
+    }
+
+    // Note: Even though this function is called `read_number`, it returns a String.
+    // This is because in the lexing stage, all token literals are String types.
+    fn read_number(&mut self) -> String {
+        let mut number = String::new();
+        while self.cur_char.is_numeric() {
+            number.push(self.cur_char);
+            self.read_char();
+        }
+        number
     }
 
     /// Returns TokenType::Ident if `word` is not a keyword in the Monkey

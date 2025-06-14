@@ -11,15 +11,17 @@ fn main() {
     println!("Press Ctrl+D to exit");
     loop {
         let mut input_string = String::new();
-
         match io::stdin().read_line(&mut input_string) {
-            Ok(0) => break, // EOF (Ctrl+D)
+            Ok(0) => {
+                // EOF (Ctrl+D)
+                println!("Exiting... Bye Bye!");
+                break;
+            }
             Ok(_) => {
                 let mut lexer = Lexer::new(&input_string);
 
                 loop {
                     let token = lexer.next_token();
-                    dbg!("{:?}", &token);
                     if token.token_type == TokenType::Illegal {
                         println!("Illegal token found: {}", token.literal);
                         break;

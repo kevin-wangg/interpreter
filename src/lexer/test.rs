@@ -31,7 +31,29 @@ fn test_next_token_simple() {
 
 #[test]
 fn test_next_token_skip_whitespace() {
+    let input = " \t\n=\r\n +\t(\n )\r{  }\t,\n;\t ";
 
+    let mut lexer = Lexer::new(input);
+
+    let expected_token_types = vec![
+        TokenType::Assign,
+        TokenType::Plus,
+        TokenType::LParen,
+        TokenType::RParen,
+        TokenType::LBrace,
+        TokenType::RBrace,
+        TokenType::Comma,
+        TokenType::Semicolon,
+        TokenType::Eof,
+    ];
+
+    let expected_token_literals = vec!["=", "+", "(", ")", "{", "}", ",", ";", ""];
+
+    for i in 0..expected_token_types.len() {
+        let token = lexer.next_token();
+        assert_eq!(token.token_type, expected_token_types[i]);
+        assert_eq!(token.literal, expected_token_literals[i]);
+    }
 }
 
 #[test]

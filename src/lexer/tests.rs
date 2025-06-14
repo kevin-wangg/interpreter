@@ -1,7 +1,7 @@
 #[cfg(test)]
-use crate::token::TokenType;
-#[cfg(test)]
 use crate::lexer::Lexer;
+#[cfg(test)]
+use crate::token::TokenType;
 
 #[test]
 fn test_next_token_simple() {
@@ -68,6 +68,15 @@ fn test_next_token_complex() {
         };
 
         let result = add(five, ten);
+        !true;
+        5 + 12 / 10 * 2;
+        5 < 105;
+
+        if (5 < 10) {
+            return true;
+        } else {
+            return false;
+        }
     ";
 
     let mut lexer = Lexer::new(input);
@@ -109,19 +118,55 @@ fn test_next_token_complex() {
         TokenType::Ident,
         TokenType::RParen,
         TokenType::Semicolon,
+        TokenType::Bang,
+        TokenType::True,
+        TokenType::Semicolon,
+        TokenType::Int,
+        TokenType::Plus,
+        TokenType::Int,
+        TokenType::Slash,
+        TokenType::Int,
+        TokenType::Star,
+        TokenType::Int,
+        TokenType::Semicolon,
+        TokenType::Int,
+        TokenType::LArrow,
+        TokenType::Int,
+        TokenType::Semicolon,
+        TokenType::If,
+        TokenType::LParen,
+        TokenType::Int,
+        TokenType::LArrow,
+        TokenType::Int,
+        TokenType::RParen,
+        TokenType::LBrace,
+        TokenType::Return,
+        TokenType::True,
+        TokenType::Semicolon,
+        TokenType::RBrace,
+        TokenType::Else,
+        TokenType::LBrace,
+        TokenType::Return,
+        TokenType::False,
+        TokenType::Semicolon,
+        TokenType::RBrace,
         TokenType::Eof,
     ];
 
     let expected_token_literals = vec![
         "let", "five", "=", "5", ";", "let", "ten", "=", "10", ";", "let", "add", "=", "fun", "(",
         "x", ",", "y", ")", "{", "x", "+", "y", ";", "}", ";", "let", "result", "=", "add", "(",
-        "five", ",", "ten", ")", ";", "", // Eof literal is an empty string
+        "five", ",", "ten", ")", ";", "!", "true", ";", "5", "+", "12", "/", "10", "*", "2", ";", "5", "<", "105", ";",
+        "if", "(", "5", "<", "10", ")", "{", "return", "true", ";", "}", "else", "{", "return",
+        "false", ";", "}", "", // Eof literal is an empty string
     ];
 
     for i in 0..expected_token_types.len() {
         let token = lexer.next_token();
-        println!("Token {}: {:?} (literal: '{}'), Expected: {:?} (literal: '{}')",
-                 i, token.token_type, token.literal, expected_token_types[i], expected_token_literals[i]);
+        println!(
+            "Token {}: {:?} (literal: '{}'), Expected: {:?} (literal: '{}')",
+            i, token.token_type, token.literal, expected_token_types[i], expected_token_literals[i]
+        );
         assert_eq!(token.token_type, expected_token_types[i]);
         assert_eq!(token.literal, expected_token_literals[i]);
     }

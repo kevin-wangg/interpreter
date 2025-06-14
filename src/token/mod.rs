@@ -14,6 +14,17 @@ pub enum TokenType {
     RBrace,
     Function,
     Let,
+    Bang,
+    Minus,
+    Slash,
+    Star,
+    LArrow,
+    RArrow,
+    True,
+    False,
+    If,
+    Else,
+    Return,
 }
 
 #[derive(Debug)]

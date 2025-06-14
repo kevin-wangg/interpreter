@@ -36,6 +36,12 @@ impl Lexer {
             '}' => Token::new(TokenType::RBrace, "}"),
             ',' => Token::new(TokenType::Comma, ","),
             ';' => Token::new(TokenType::Semicolon, ";"),
+            '!' => Token::new(TokenType::Bang, "!"),
+            '-' => Token::new(TokenType::Minus, "-"),
+            '/' => Token::new(TokenType::Slash, "/"),
+            '*' => Token::new(TokenType::Star, "*"),
+            '<' => Token::new(TokenType::LArrow, "<"),
+            '>' => Token::new(TokenType::RArrow, ">"),
             '\0' => Token::new(TokenType::Eof, ""),
             c => {
                 let token = if c.is_alphabetic() || Self::is_underscore(c) {
@@ -118,6 +124,11 @@ impl Lexer {
         let mut keywords = HashMap::new();
         keywords.insert("let", TokenType::Let);
         keywords.insert("fun", TokenType::Function);
+        keywords.insert("true", TokenType::True);
+        keywords.insert("false", TokenType::False);
+        keywords.insert("if", TokenType::If);
+        keywords.insert("else", TokenType::Else);
+        keywords.insert("return", TokenType::Return);
         *keywords.get(word).unwrap_or(&TokenType::Ident)
     }
 

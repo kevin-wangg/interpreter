@@ -28,7 +28,13 @@ impl Lexer {
         self.skip_whitespace();
 
         let token = match self.cur_char {
-            '=' => Token::new(TokenType::Assign, "="),
+            '=' => {
+                if self.peek_char() == '=' {
+                    Token::new(TokenType::Eq, "==")
+                } else {
+                    Token::new(TokenType::Assign, "=")
+                }
+            }
             '+' => Token::new(TokenType::Plus, "+"),
             '(' => Token::new(TokenType::LParen, "("),
             ')' => Token::new(TokenType::RParen, ")"),
@@ -36,12 +42,30 @@ impl Lexer {
             '}' => Token::new(TokenType::RBrace, "}"),
             ',' => Token::new(TokenType::Comma, ","),
             ';' => Token::new(TokenType::Semicolon, ";"),
-            '!' => Token::new(TokenType::Bang, "!"),
+            '!' => {
+                if self.peek_char() == '=' {
+                    Token::new(TokenType::NotEq, "!=")
+                } else {
+                    Token::new(TokenType::Bang, "!")
+                }
+            }
             '-' => Token::new(TokenType::Minus, "-"),
             '/' => Token::new(TokenType::Slash, "/"),
             '*' => Token::new(TokenType::Star, "*"),
-            '<' => Token::new(TokenType::LArrow, "<"),
-            '>' => Token::new(TokenType::RArrow, ">"),
+            '<' => {
+                if self.peek_char() == '=' {
+                    Token::new(TokenType::LessEq, "<=")
+                } else {
+                    Token::new(TokenType::LArrow, "<")
+                }
+            }
+            '>' => {
+                if self.peek_char() == '=' {
+                    Token::new(TokenType::GreaterEq, ">=")
+                } else {
+                    Token::new(TokenType::RArrow, ">")
+                }
+            }
             '\0' => Token::new(TokenType::Eof, ""),
             c => {
                 let token = if c.is_alphabetic() || Self::is_underscore(c) {
@@ -73,6 +97,14 @@ impl Lexer {
             self.cur_char = self.input[self.read_position];
             self.cur_position = self.read_position;
             self.read_position += 1;
+        }
+    }
+
+    fn peek_char(&self) -> char {
+        if self.read_position >= self.input.len() {
+            '\0'
+        } else {
+            self.input[self.read_position]
         }
     }
 

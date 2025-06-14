@@ -23,6 +23,8 @@ impl Lexer {
     }
 
     pub fn next_token(&mut self) -> Token {
+        self.skip_whitespace();
+
         let token = match self.cur_char {
             '=' => Token::new(TokenType::Assign, "="),
             '+' => Token::new(TokenType::Plus, "+"),
@@ -46,6 +48,12 @@ impl Lexer {
             self.cur_char = self.input[self.read_position];
             self.cur_position = self.read_position;
             self.read_position += 1;
+        }
+    }
+
+    fn skip_whitespace(&mut self) {
+        while self.cur_char.is_whitespace() {
+            self.read_char();
         }
     }
 }

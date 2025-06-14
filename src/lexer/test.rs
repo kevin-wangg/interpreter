@@ -30,6 +30,11 @@ fn test_next_token_simple() {
 }
 
 #[test]
+fn test_next_token_skip_whitespace() {
+
+}
+
+#[test]
 fn test_next_token_complex() {
     let input = "
         let five = 5;

@@ -7,25 +7,33 @@ use lexer::Lexer;
 use token::TokenType;
 
 fn main() {
-    let mut input_string = String::new();
-
-    println!("Enter some text:");
-
-    io::stdin()
-        .read_line(&mut input_string)
-        .expect("Failed to read line");
-
-    let mut lexer = Lexer::new(&input_string);
-
+    println!("Welcome to the Monkey programming language!");
+    println!("Press Ctrl+D to exit");
     loop {
-        let token = lexer.next_token();
-        println!("{:?}", token);
-        if token.token_type == TokenType::Illegal {
-            panic!("Illegal token found: {}", token.literal);
-        } else if token.token_type == TokenType::Eof {
-            break;
-        } else {
-            println!("{}", token.literal);
+        let mut input_string = String::new();
+
+        match io::stdin().read_line(&mut input_string) {
+            Ok(0) => break, // EOF (Ctrl+D)
+            Ok(_) => {
+                let mut lexer = Lexer::new(&input_string);
+
+                loop {
+                    let token = lexer.next_token();
+                    dbg!("{:?}", &token);
+                    if token.token_type == TokenType::Illegal {
+                        println!("Illegal token found: {}", token.literal);
+                        break;
+                    } else if token.token_type == TokenType::Eof {
+                        break;
+                    } else {
+                        println!("{}", token.literal);
+                    }
+                }
+            }
+            Err(error) => {
+                eprintln!("Error reading input: {}", error);
+                break;
+            }
         }
     }
 }

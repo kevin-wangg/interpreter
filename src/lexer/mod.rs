@@ -1,5 +1,7 @@
 mod test;
 
+use std::collections::HashMap;
+
 use crate::token::{Token, TokenType};
 
 pub struct Lexer {
@@ -35,7 +37,15 @@ impl Lexer {
             ',' => Token::new(TokenType::Comma, ","),
             ';' => Token::new(TokenType::Semicolon, ";"),
             '\0' => Token::new(TokenType::Eof, ""),
-            c => Token::new(TokenType::Illegal, &c.to_string())
+            c => {
+                if c.is_alphabetic() || Self::is_underscore(c) {
+                    let word = self.read_word();
+                    let token_type = Self::lookup_ident(&word);
+                    Token::new(token_type, &word)
+                } else {
+                    Token::new(TokenType::Illegal, &c.to_string())
+                }
+            }
         };
         self.read_char();
         token
@@ -49,6 +59,38 @@ impl Lexer {
             self.cur_position = self.read_position;
             self.read_position += 1;
         }
+    }
+
+    fn read_word(&mut self) -> String {
+        let mut word = String::new();
+        while self.cur_char.is_alphanumeric() || Self::is_underscore(self.cur_char) {
+            word.push(self.cur_char);
+            self.read_char();
+        }
+        word
+    }
+
+    /// Returns TokenType::Ident if `word` is not a keyword in the Monkey
+    /// programming language (eg. let, fun), or the corresponding token type otherwise.
+    ///
+    /// # Examples:
+    ///
+    /// Basic usage:
+    ///
+    /// ```
+    /// assert!(lookup_ident("let") == TokenType::Let)
+    /// assert!(lookup_ident("fun") == TokenType::Function)
+    /// assert!(lookup_ident("skibidi") == TokenType::Ident)
+    /// ```
+    fn lookup_ident(word: &str) -> TokenType {
+        let mut keywords = HashMap::new();
+        keywords.insert("let", TokenType::Let);
+        keywords.insert("fun", TokenType::Function);
+        *keywords.get(word).unwrap_or(&TokenType::Ident)
+    }
+
+    fn is_underscore(c: char) -> bool {
+        c == '_'
     }
 
     fn skip_whitespace(&mut self) {

@@ -71,6 +71,10 @@ fn test_next_token_complex() {
         !true;
         5 + 12 / 10 * 2;
         5 < 105;
+        10 == 10;
+        10 != 9;
+        5 <= 10;
+        10 >= 5;
 
         if (5 < 10) {
             return true;
@@ -133,6 +137,22 @@ fn test_next_token_complex() {
         TokenType::LArrow,
         TokenType::Int,
         TokenType::Semicolon,
+        TokenType::Int,
+        TokenType::Eq,
+        TokenType::Int,
+        TokenType::Semicolon,
+        TokenType::Int,
+        TokenType::NotEq,
+        TokenType::Int,
+        TokenType::Semicolon,
+        TokenType::Int,
+        TokenType::LessEq,
+        TokenType::Int,
+        TokenType::Semicolon,
+        TokenType::Int,
+        TokenType::GreaterEq,
+        TokenType::Int,
+        TokenType::Semicolon,
         TokenType::If,
         TokenType::LParen,
         TokenType::Int,
@@ -157,7 +177,8 @@ fn test_next_token_complex() {
         "let", "five", "=", "5", ";", "let", "ten", "=", "10", ";", "let", "add", "=", "fun", "(",
         "x", ",", "y", ")", "{", "x", "+", "y", ";", "}", ";", "let", "result", "=", "add", "(",
         "five", ",", "ten", ")", ";", "!", "true", ";", "5", "+", "12", "/", "10", "*", "2", ";",
-        "5", "<", "105", ";", "if", "(", "5", "<", "10", ")", "{", "return", "true", ";", "}",
+        "5", "<", "105", ";", "10", "==", "10", ";", "10", "!=", "9", ";", "5", "<=", "10", ";",
+        "10", ">=", "5", ";", "if", "(", "5", "<", "10", ")", "{", "return", "true", ";", "}",
         "else", "{", "return", "false", ";", "}", "", // Eof literal is an empty string
     ];
 

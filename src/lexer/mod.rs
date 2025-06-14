@@ -30,6 +30,7 @@ impl Lexer {
         let token = match self.cur_char {
             '=' => {
                 if self.peek_char() == '=' {
+                    self.read_char(); // consume the second '='
                     Token::new(TokenType::Eq, "==")
                 } else {
                     Token::new(TokenType::Assign, "=")
@@ -44,6 +45,7 @@ impl Lexer {
             ';' => Token::new(TokenType::Semicolon, ";"),
             '!' => {
                 if self.peek_char() == '=' {
+                    self.read_char(); // consume the second '='
                     Token::new(TokenType::NotEq, "!=")
                 } else {
                     Token::new(TokenType::Bang, "!")
@@ -54,6 +56,7 @@ impl Lexer {
             '*' => Token::new(TokenType::Star, "*"),
             '<' => {
                 if self.peek_char() == '=' {
+                    self.read_char(); // consume the second '='
                     Token::new(TokenType::LessEq, "<=")
                 } else {
                     Token::new(TokenType::LArrow, "<")
@@ -61,6 +64,7 @@ impl Lexer {
             }
             '>' => {
                 if self.peek_char() == '=' {
+                    self.read_char(); // consume the second '='
                     Token::new(TokenType::GreaterEq, ">=")
                 } else {
                     Token::new(TokenType::RArrow, ">")

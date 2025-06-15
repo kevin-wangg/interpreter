@@ -18,6 +18,14 @@ pub struct Program {
     pub statements: Vec<Box<dyn Statement>>,
 }
 
+impl Program {
+    pub fn new(statements: Vec<Box<dyn Statement>>) -> Self {
+        Program {
+            statements
+        }
+    }
+}
+
 pub struct Identifier {
     pub token: Token,
     pub value: String,
@@ -47,7 +55,18 @@ impl Expression for Identifier {}
 pub struct LetStatement {
     pub token: Token,
     pub name: Identifier,
-    pub value: Box<dyn Expression>,
+    // TODO: Uncomment this when parsing Expressions is supported
+    // pub value: Box<dyn Expression>,
+}
+
+impl LetStatement {
+    // TODO: Add a value parameter when parsing Expressions is supported
+    pub fn new(token: Token, name: Identifier) -> Self {
+        LetStatement {
+            token,
+            name
+        }
+    }
 }
 
 impl Node for LetStatement {

@@ -10,6 +10,7 @@ pub struct Parser {
     lexer: Lexer,
     cur_token: Token,
     peek_token: Token,
+    errors: Vec<String>,
 }
 
 impl Parser {
@@ -20,6 +21,7 @@ impl Parser {
             lexer,
             cur_token: Token::new(TokenType::Int, "6"),
             peek_token: Token::new(TokenType::Int, "9"),
+            errors: Vec::new(),
         };
         // Advance the parser by two tokens so
         // both cur_token and peek_token are populated
@@ -34,11 +36,15 @@ impl Parser {
         while self.cur_token.token_type != TokenType::Eof {
             if let Some(statement) = self.parse_statement() {
                 program.statements.push(statement)
+            } else {
+                // If we failed to parse the statement, then just skip to the end to avoid the bad tokens.
+                self.skip_to_statement_end();
             }
 
-            // Verify that all statements end with a semicolon
+            // Add a parser error if the statement does not end with a semicolon, but still continue parsing
+            // following statements.
             if self.cur_token.token_type != TokenType::Semicolon {
-                return None;
+                self.expect_error(TokenType::Semicolon);
             } else {
                 self.next_token();
             }
@@ -87,8 +93,16 @@ impl Parser {
             self.next_token();
             true
         } else {
+            self.expect_error(expected_token_type);
             false
         }
+    }
+
+    fn expect_error(&mut self, expected_token_type: TokenType) {
+        self.errors.push(format!(
+            "Expected  {:?}, found {:?} instead",
+            expected_token_type, self.peek_token.token_type
+        ))
     }
 
     /// This method should only be used during development. It is used to
@@ -105,5 +119,9 @@ impl Parser {
     fn next_token(&mut self) {
         self.cur_token = self.peek_token.clone();
         self.peek_token = self.lexer.next_token();
+    }
+
+    pub fn get_errors(&self) -> &Vec<String> {
+        &self.errors
     }
 }

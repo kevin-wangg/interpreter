@@ -9,8 +9,8 @@ use crate::parser::Parser;
 fn test_let_statements() {
     let input = "
         let x = 5;
-        let y = 10;
-        let foobar = 82388;
+        let y 10;
+        let = 82388;
     ";
 
     let lexer = Lexer::new(input);
@@ -18,6 +18,7 @@ fn test_let_statements() {
 
     let expected_identifier_literals = vec!["x", "y", "foobar"];
     if let Some(program) = parser.parse_program() {
+        check_parser_errors(&parser);
         assert!(program.statements.len() == 3);
         for i in 0..program.statements.len() {
             let statement = &program.statements[i];
@@ -33,6 +34,17 @@ fn test_let_statements() {
         }
     } else {
         assert!(false, "Failed to parse program")
+    }
+}
+
+#[cfg(test)]
+fn check_parser_errors(parser: &Parser) {
+    let errors = parser.get_errors();
+    if !errors.is_empty() {
+        for error in errors {
+            eprintln!("Parser error: {}", error);
+        }
+        assert!(false, "Parser has {} error(s)", errors.len());
     }
 }
 

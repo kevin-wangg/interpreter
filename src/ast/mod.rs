@@ -20,9 +20,7 @@ pub struct Program {
 
 impl Program {
     pub fn new(statements: Vec<Box<dyn Statement>>) -> Self {
-        Program {
-            statements
-        }
+        Program { statements }
     }
 }
 
@@ -62,10 +60,7 @@ pub struct LetStatement {
 impl LetStatement {
     // TODO: Add a value parameter when parsing Expressions is supported
     pub fn new(token: Token, name: Identifier) -> Self {
-        LetStatement {
-            token,
-            name
-        }
+        LetStatement { token, name }
     }
 }
 

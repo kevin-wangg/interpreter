@@ -1,3 +1,5 @@
+mod tests;
+
 use std::any::Any;
 
 use crate::token::Token;
@@ -8,6 +10,7 @@ use crate::token::Token;
 pub trait Node {
     fn token_literal(&self) -> String;
     fn as_any(&self) -> &dyn Any;
+    fn string(&self) -> String;
 }
 
 pub trait Statement: Node {}
@@ -23,6 +26,8 @@ impl Program {
         Program { statements }
     }
 }
+
+// ========== Identifier Start ==========
 
 pub struct Identifier {
     pub token: Token,
@@ -46,9 +51,17 @@ impl Node for Identifier {
     fn as_any(&self) -> &dyn Any {
         self
     }
+
+    fn string(&self) -> String {
+        self.value.clone()
+    }
 }
 
 impl Expression for Identifier {}
+
+// ========== Identifier End ==========
+
+// ========== Let statement Start ==========
 
 pub struct LetStatement {
     pub token: Token,
@@ -72,6 +85,45 @@ impl Node for LetStatement {
     fn as_any(&self) -> &dyn Any {
         self
     }
+
+    fn string(&self) -> String {
+        format!("let {} = <placeholder>;", self.name.string())
+    }
 }
 
 impl Statement for LetStatement {}
+
+// ========== Let statement End ==========
+
+// ========== Return statement Start ==========
+
+// TODO: Revisit this once expression parsing is supported
+pub struct ReturnStatement {
+    pub token: Token,
+    pub return_value: Box<dyn Expression>,
+}
+
+// ========== Return statement End ==========
+
+pub struct ExpressionStatement {
+    pub token: Token,
+    pub expression: Box<dyn Expression>,
+}
+
+impl ExpressionStatement {}
+
+impl Node for ExpressionStatement {
+    fn token_literal(&self) -> String {
+        self.token.literal.clone()
+    }
+
+    fn as_any(&self) -> &dyn Any {
+        self
+    }
+
+    fn string(&self) -> String {
+        format!("{};", self.expression.string())
+    }
+}
+
+impl Statement for ExpressionStatement {}

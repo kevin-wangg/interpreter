@@ -1,4 +1,4 @@
-#[derive(Clone, Copy, Eq, Debug, PartialEq)]
+#[derive(Clone, Copy, Eq, Debug, Hash, PartialEq)]
 pub enum TokenType {
     Illegal,
     Eof,

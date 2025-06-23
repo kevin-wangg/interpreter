@@ -1,7 +1,7 @@
 #[cfg(test)]
-use crate::ast::{Identifier, LetStatement};
-#[cfg(test)]
 use crate::ast::Node;
+#[cfg(test)]
+use crate::ast::{Identifier, LetStatement};
 #[cfg(test)]
 use crate::token::{Token, TokenType};
 

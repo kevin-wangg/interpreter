@@ -1,7 +1,11 @@
 mod tests;
 
+use std::collections::HashMap;
+
+use crate::ast::{Expression, ReturnStatement};
+
 use crate::{
-    ast::{Identifier, LetStatement, Node, Program, Statement},
+    ast::{Identifier, LetStatement, Program, Statement},
     lexer::Lexer,
     token::{Token, TokenType},
 };
@@ -11,6 +15,8 @@ pub struct Parser {
     cur_token: Token,
     peek_token: Token,
     errors: Vec<String>,
+    prefix_parse_functions: HashMap<TokenType, fn(&mut Parser) -> Box<dyn Expression>>,
+    infix_parse_functions: HashMap<TokenType, fn(Box<dyn Expression>) -> Box<dyn Expression>>,
 }
 
 impl Parser {
@@ -22,11 +28,15 @@ impl Parser {
             cur_token: Token::new(TokenType::Int, "6"),
             peek_token: Token::new(TokenType::Int, "9"),
             errors: Vec::new(),
+            prefix_parse_functions: HashMap::new(),
+            infix_parse_functions: HashMap::new(),
         };
         // Advance the parser by two tokens so
         // both cur_token and peek_token are populated
         parser.next_token();
         parser.next_token();
+
+        parser.register_prefix_function(TokenType::Ident, |parser| parser.parse_identifier());
         parser
     }
 
@@ -56,6 +66,7 @@ impl Parser {
     fn parse_statement(&mut self) -> Option<Box<dyn Statement>> {
         match self.cur_token.token_type {
             TokenType::Let => self.parse_let_statement(),
+            TokenType::Return => self.parse_return_statement(),
             _ => None,
         }
     }
@@ -83,6 +94,19 @@ impl Parser {
         // Skip to end of statement for now since parsing expressions is not yet supported
         self.skip_to_statement_end();
         Some(Box::new(LetStatement::new(token, name)))
+    }
+
+    fn parse_return_statement(&mut self) -> Option<Box<dyn Statement>> {
+        // This check is technically not needed since if we enter this function,
+        // the current token should have TokenType::Return.
+        let token = if self.cur_token.token_type == TokenType::Return {
+            self.cur_token.clone()
+        } else {
+            return None;
+        };
+        // Skip to the end of the statement for now since parsing expressions is not yet supported
+        self.skip_to_statement_end();
+        Some(Box::new(ReturnStatement::new(token)))
     }
 
     /// If `peek_token` is equal to the expected token type, then
@@ -123,5 +147,30 @@ impl Parser {
 
     pub fn get_errors(&self) -> &Vec<String> {
         &self.errors
+    }
+
+    pub fn register_prefix_function(
+        &mut self,
+        token_type: TokenType,
+        prefix_function: fn(&mut Parser) -> Box<dyn Expression>,
+    ) {
+        self.prefix_parse_functions
+            .insert(token_type, prefix_function);
+    }
+
+    pub fn register_infix_function(
+        &mut self,
+        token_type: TokenType,
+        infix_function: fn(Box<dyn Expression>) -> Box<dyn Expression>,
+    ) {
+        self.infix_parse_functions
+            .insert(token_type, infix_function);
+    }
+
+    pub fn parse_identifier(&mut self) -> Box<dyn Expression> {
+        Box::new(Identifier::new(
+            self.cur_token.clone(),
+            &self.cur_token.literal,
+        ))
     }
 }

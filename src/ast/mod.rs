@@ -97,11 +97,33 @@ impl Statement for LetStatement {}
 
 // ========== Return statement Start ==========
 
-// TODO: Revisit this once expression parsing is supported
 pub struct ReturnStatement {
     pub token: Token,
-    pub return_value: Box<dyn Expression>,
+    // TODO: Uncomment this when parsing Expressions is supported
+    // pub return_value: Box<dyn Expression>,
 }
+
+impl ReturnStatement {
+    pub fn new(token: Token /*return_value: Box<dyn Expression>*/) -> Self {
+        Self { token }
+    }
+}
+
+impl Node for ReturnStatement {
+    fn token_literal(&self) -> String {
+        self.token.literal.clone()
+    }
+
+    fn as_any(&self) -> &dyn Any {
+        self
+    }
+
+    fn string(&self) -> String {
+        format!("return <placeholder>")
+    }
+}
+
+impl Statement for ReturnStatement {}
 
 // ========== Return statement End ==========
 

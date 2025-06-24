@@ -132,7 +132,11 @@ pub struct ExpressionStatement {
     pub expression: Box<dyn Expression>,
 }
 
-impl ExpressionStatement {}
+impl ExpressionStatement {
+    pub fn new(token: Token, expression: Box<dyn Expression>) -> Self {
+        Self { token, expression }
+    }
+}
 
 impl Node for ExpressionStatement {
     fn token_literal(&self) -> String {

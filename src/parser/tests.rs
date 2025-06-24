@@ -1,7 +1,5 @@
 #[cfg(test)]
-use crate::ast::LetStatement;
-#[cfg(test)]
-use crate::ast::ReturnStatement;
+use crate::ast::{ExpressionStatement, Identifier, LetStatement, Node, ReturnStatement};
 #[cfg(test)]
 use crate::lexer::Lexer;
 #[cfg(test)]
@@ -63,6 +61,34 @@ fn test_return_statements() {
         }
     } else {
         assert!(false, "Failed to parse program")
+    }
+}
+
+#[test]
+fn test_identifier_expression() {
+    let input = "foobar;";
+    let lexer = Lexer::new(input);
+    let mut parser = Parser::new(lexer);
+    if let Some(program) = parser.parse_program() {
+        check_parser_errors(&parser);
+        assert!(program.statements.len() == 1);
+
+        let statement = &program.statements[0];
+        let expression_statement = statement
+            .as_any()
+            .downcast_ref::<ExpressionStatement>()
+            .expect("Expected expression statement");
+
+        let identifier = expression_statement
+            .expression
+            .as_any()
+            .downcast_ref::<Identifier>()
+            .expect("Expected identifier expression");
+
+        assert_eq!(identifier.value, "foobar");
+        assert_eq!(identifier.token_literal(), "foobar");
+    } else {
+        assert!(false, "Failed to parse program");
     }
 }
 

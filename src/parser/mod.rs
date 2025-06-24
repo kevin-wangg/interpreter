@@ -2,7 +2,7 @@ mod tests;
 
 use std::collections::HashMap;
 
-use crate::ast::{Expression, ReturnStatement};
+use crate::ast::{Expression, ExpressionStatement, ReturnStatement};
 
 use crate::{
     ast::{Identifier, LetStatement, Program, Statement},
@@ -67,8 +67,37 @@ impl Parser {
         match self.cur_token.token_type {
             TokenType::Let => self.parse_let_statement(),
             TokenType::Return => self.parse_return_statement(),
-            _ => None,
+            // Default case is assume we are parsing an expression statement
+            _ => self.parse_expression_statement()
         }
+    }
+
+    fn parse_expression_statement(&mut self) -> Option<Box<dyn Statement>> {
+        let token = self.cur_token.clone();
+        let expression = if let Some(expression) = self.parse_expression(Precendence::Lowest as i32) {
+            expression
+        } else {
+            return None;
+        };
+
+        if !self.expect_peek(TokenType::Semicolon) {
+            self.expect_error(TokenType::Semicolon);
+            return None;
+        }
+
+        Some(Box::new(ExpressionStatement::new(token, expression)))
+    }
+
+    fn parse_expression(&mut self, precendence: i32) -> Option<Box<dyn Expression>> {
+        let prefix_function = if let Some(f) = self.prefix_parse_functions.get(&self.cur_token.token_type) {
+            f
+        } else {
+            return None;
+        };
+
+        let left_expression = prefix_function(self);
+
+        Some(left_expression)
     }
 
     fn parse_let_statement(&mut self) -> Option<Box<dyn Statement>> {
@@ -122,6 +151,7 @@ impl Parser {
         }
     }
 
+    /// Adds a parser error indicating the expected token type was not found
     fn expect_error(&mut self, expected_token_type: TokenType) {
         self.errors.push(format!(
             "Expected  {:?}, found {:?} instead",
@@ -173,4 +203,14 @@ impl Parser {
             &self.cur_token.literal,
         ))
     }
+}
+
+enum Precendence {
+    Lowest,
+    Equals,
+    LessGreater,
+    Sum,
+    Product,
+    Prefix,
+    Call
 }

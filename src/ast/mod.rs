@@ -119,7 +119,7 @@ impl Node for ReturnStatement {
     }
 
     fn string(&self) -> String {
-        format!("return <placeholder>")
+        "return <placeholder>".to_string()
     }
 }
 

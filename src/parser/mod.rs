@@ -4,6 +4,9 @@ use std::collections::HashMap;
 
 use crate::ast::{Expression, ExpressionStatement, IntegerLiteral, ReturnStatement};
 
+type PrefixParseFn = fn(&mut Parser) -> Option<Box<dyn Expression>>;
+type InfixParseFn = fn(Box<dyn Expression>) -> Box<dyn Expression>;
+
 use crate::{
     ast::{Identifier, LetStatement, Program, Statement},
     lexer::Lexer,
@@ -15,8 +18,8 @@ pub struct Parser {
     cur_token: Token,
     peek_token: Token,
     errors: Vec<String>,
-    prefix_parse_functions: HashMap<TokenType, fn(&mut Parser) -> Option<Box<dyn Expression>>>,
-    infix_parse_functions: HashMap<TokenType, fn(Box<dyn Expression>) -> Box<dyn Expression>>,
+    prefix_parse_functions: HashMap<TokenType, PrefixParseFn>,
+    infix_parse_functions: HashMap<TokenType, InfixParseFn>,
 }
 
 impl Parser {
@@ -69,17 +72,13 @@ impl Parser {
             TokenType::Let => self.parse_let_statement(),
             TokenType::Return => self.parse_return_statement(),
             // Default case is assume we are parsing an expression statement
-            _ => self.parse_expression_statement()
+            _ => self.parse_expression_statement(),
         }
     }
 
     fn parse_expression_statement(&mut self) -> Option<Box<dyn Statement>> {
         let token = self.cur_token.clone();
-        let expression = if let Some(expression) = self.parse_expression(Precendence::Lowest as i32) {
-            expression
-        } else {
-            return None;
-        };
+        let expression = self.parse_expression(Precendence::Lowest as i32)?;
 
         if !self.expect_peek(TokenType::Semicolon) {
             self.expect_error(TokenType::Semicolon);
@@ -90,11 +89,9 @@ impl Parser {
     }
 
     fn parse_expression(&mut self, precendence: i32) -> Option<Box<dyn Expression>> {
-        let prefix_function = if let Some(f) = self.prefix_parse_functions.get(&self.cur_token.token_type) {
-            f
-        } else {
-            return None;
-        };
+        let prefix_function = self
+            .prefix_parse_functions
+            .get(&self.cur_token.token_type)?;
 
         prefix_function(self)
     }
@@ -181,17 +178,13 @@ impl Parser {
     pub fn register_prefix_function(
         &mut self,
         token_type: TokenType,
-        prefix_function: fn(&mut Parser) -> Option<Box<dyn Expression>>,
+        prefix_function: PrefixParseFn,
     ) {
         self.prefix_parse_functions
             .insert(token_type, prefix_function);
     }
 
-    pub fn register_infix_function(
-        &mut self,
-        token_type: TokenType,
-        infix_function: fn(Box<dyn Expression>) -> Box<dyn Expression>,
-    ) {
+    pub fn register_infix_function(&mut self, token_type: TokenType, infix_function: InfixParseFn) {
         self.infix_parse_functions
             .insert(token_type, infix_function);
     }
@@ -208,7 +201,8 @@ impl Parser {
         match token.literal.parse::<i64>() {
             Ok(value) => Some(Box::new(IntegerLiteral::new(token, value))),
             Err(_) => {
-                self.errors.push(format!("Could not parse {} as integer", token.literal));
+                self.errors
+                    .push(format!("Could not parse {} as integer", token.literal));
                 None
             }
         }
@@ -222,5 +216,5 @@ enum Precendence {
     Sum,
     Product,
     Prefix,
-    Call
+    Call,
 }

@@ -1,3 +1,4 @@
+use crate::ast::IntegerLiteral;
 #[cfg(test)]
 use crate::ast::{ExpressionStatement, Identifier, LetStatement, Node, ReturnStatement};
 #[cfg(test)]
@@ -87,6 +88,31 @@ fn test_identifier_expression() {
 
         assert_eq!(identifier.value, "foobar");
         assert_eq!(identifier.token_literal(), "foobar");
+    } else {
+        assert!(false, "Failed to parse program");
+    }
+}
+
+#[test]
+fn test_integer_literal_expression() {
+    let input = "10;";
+    let lexer = Lexer::new(input);
+    let mut parser = Parser::new(lexer);
+    if let Some(program) = parser.parse_program() {
+        check_parser_errors(&parser);
+        assert!(program.statements.len() == 1);
+        let statement = &program.statements[0];
+        let expression_statement = statement
+            .as_any()
+            .downcast_ref::<ExpressionStatement>()
+            .expect("Expected expression statement");
+        let integer_literal = expression_statement
+            .expression
+            .as_any()
+            .downcast_ref::<IntegerLiteral>()
+            .expect("Expected integer literal expression");
+        assert_eq!(integer_literal.value, 10);
+        assert_eq!(integer_literal.token_literal(), "10");
     } else {
         assert!(false, "Failed to parse program");
     }

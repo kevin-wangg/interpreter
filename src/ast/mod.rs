@@ -127,6 +127,8 @@ impl Statement for ReturnStatement {}
 
 // ========== Return statement End ==========
 
+// ========== Expression statement Start ==========
+
 pub struct ExpressionStatement {
     pub token: Token,
     pub expression: Box<dyn Expression>,
@@ -153,3 +155,32 @@ impl Node for ExpressionStatement {
 }
 
 impl Statement for ExpressionStatement {}
+
+// ========== Expression statement End ==========
+
+pub struct IntegerLiteral {
+    pub token: Token,
+    pub value: i64,
+}
+
+impl IntegerLiteral {
+    pub fn new(token: Token, value: i64) -> Self {
+        Self { token, value }
+    }
+}
+
+impl Node for IntegerLiteral {
+    fn token_literal(&self) -> String {
+        self.token.literal.clone()
+    }
+
+    fn as_any(&self) -> &dyn Any {
+        self
+    }
+
+    fn string(&self) -> String {
+        self.value.to_string()
+    }
+}
+
+impl Expression for IntegerLiteral {}

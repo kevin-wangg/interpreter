@@ -2,7 +2,7 @@ mod tests;
 
 use std::collections::HashMap;
 
-use crate::ast::{Expression, ExpressionStatement, ReturnStatement};
+use crate::ast::{Expression, ExpressionStatement, IntegerLiteral, ReturnStatement};
 
 use crate::{
     ast::{Identifier, LetStatement, Program, Statement},
@@ -15,7 +15,7 @@ pub struct Parser {
     cur_token: Token,
     peek_token: Token,
     errors: Vec<String>,
-    prefix_parse_functions: HashMap<TokenType, fn(&mut Parser) -> Box<dyn Expression>>,
+    prefix_parse_functions: HashMap<TokenType, fn(&mut Parser) -> Option<Box<dyn Expression>>>,
     infix_parse_functions: HashMap<TokenType, fn(Box<dyn Expression>) -> Box<dyn Expression>>,
 }
 
@@ -37,6 +37,7 @@ impl Parser {
         parser.next_token();
 
         parser.register_prefix_function(TokenType::Ident, |parser| parser.parse_identifier());
+        parser.register_prefix_function(TokenType::Int, |parser| parser.parse_integer_literal());
         parser
     }
 
@@ -95,9 +96,7 @@ impl Parser {
             return None;
         };
 
-        let left_expression = prefix_function(self);
-
-        Some(left_expression)
+        prefix_function(self)
     }
 
     fn parse_let_statement(&mut self) -> Option<Box<dyn Statement>> {
@@ -182,7 +181,7 @@ impl Parser {
     pub fn register_prefix_function(
         &mut self,
         token_type: TokenType,
-        prefix_function: fn(&mut Parser) -> Box<dyn Expression>,
+        prefix_function: fn(&mut Parser) -> Option<Box<dyn Expression>>,
     ) {
         self.prefix_parse_functions
             .insert(token_type, prefix_function);
@@ -197,11 +196,22 @@ impl Parser {
             .insert(token_type, infix_function);
     }
 
-    pub fn parse_identifier(&mut self) -> Box<dyn Expression> {
-        Box::new(Identifier::new(
+    pub fn parse_identifier(&mut self) -> Option<Box<dyn Expression>> {
+        Some(Box::new(Identifier::new(
             self.cur_token.clone(),
             &self.cur_token.literal,
-        ))
+        )))
+    }
+
+    pub fn parse_integer_literal(&mut self) -> Option<Box<dyn Expression>> {
+        let token = self.cur_token.clone();
+        match token.literal.parse::<i64>() {
+            Ok(value) => Some(Box::new(IntegerLiteral::new(token, value))),
+            Err(_) => {
+                self.errors.push(format!("Could not parse {} as integer", token.literal));
+                None
+            }
+        }
     }
 }
 

@@ -3,7 +3,8 @@ mod tests;
 use std::collections::HashMap;
 
 use crate::ast::{
-    BooleanLiteral, Expression, ExpressionStatement, IntegerLiteral, ReturnStatement,
+    BooleanLiteral, Expression, ExpressionStatement, IntegerLiteral, PrefixExpression,
+    ReturnStatement,
 };
 
 type PrefixParseFn = fn(&mut Parser) -> Option<Box<dyn Expression>>;
@@ -45,6 +46,9 @@ impl Parser {
         parser.register_prefix_function(TokenType::Int, |parser| parser.parse_integer_literal());
         parser.register_prefix_function(TokenType::True, |parser| parser.parse_boolean_literal());
         parser.register_prefix_function(TokenType::False, |parser| parser.parse_boolean_literal());
+        parser
+            .register_prefix_function(TokenType::Minus, |parser| parser.parse_prefix_expression());
+        parser.register_prefix_function(TokenType::Bang, |parser| parser.parse_prefix_expression());
         parser
     }
 
@@ -222,6 +226,13 @@ impl Parser {
                 None
             }
         }
+    }
+
+    pub fn parse_prefix_expression(&mut self) -> Option<Box<dyn Expression>> {
+        let token = self.cur_token.clone();
+        let operator = token.literal.clone();
+        let right = self.parse_expression(Precendence::Prefix as i32)?;
+        Some(Box::new(PrefixExpression::new(token, &operator, right)))
     }
 }
 

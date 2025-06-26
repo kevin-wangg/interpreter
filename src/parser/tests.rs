@@ -1,4 +1,4 @@
-use crate::ast::{BooleanLiteral, IntegerLiteral};
+use crate::ast::{BooleanLiteral, IntegerLiteral, PrefixExpression};
 #[cfg(test)]
 use crate::ast::{ExpressionStatement, Identifier, LetStatement, Node, ReturnStatement};
 #[cfg(test)]
@@ -138,6 +138,44 @@ fn test_boolean_literal_expression() {
             .expect("Expected boolean literal expression");
         assert_eq!(integer_literal.value, false);
         assert_eq!(integer_literal.token_literal(), "false");
+    } else {
+        assert!(false, "Failed to parse program");
+    }
+}
+
+#[test]
+fn test_bang_expression() {
+    let input = "!true;";
+    let lexer = Lexer::new(input);
+    let mut parser = Parser::new(lexer);
+
+    if let Some(program) = parser.parse_program() {
+        check_parser_errors(&parser);
+        assert!(program.statements.len() == 1);
+
+        let statement = &program.statements[0];
+        let expression_statement = statement
+            .as_any()
+            .downcast_ref::<ExpressionStatement>()
+            .expect("Expected expression statement");
+
+        let prefix_expression = expression_statement
+            .expression
+            .as_any()
+            .downcast_ref::<PrefixExpression>()
+            .expect("Expected prefix expression");
+
+        assert_eq!(prefix_expression.operator, "!");
+        assert_eq!(prefix_expression.token_literal(), "!");
+
+        let right_operand = prefix_expression
+            .right
+            .as_any()
+            .downcast_ref::<BooleanLiteral>()
+            .expect("Expected boolean literal as right operand");
+
+        assert_eq!(right_operand.value, true);
+        assert_eq!(right_operand.token_literal(), "true");
     } else {
         assert!(false, "Failed to parse program");
     }

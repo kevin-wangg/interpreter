@@ -2,7 +2,9 @@ mod tests;
 
 use std::collections::HashMap;
 
-use crate::ast::{Expression, ExpressionStatement, IntegerLiteral, ReturnStatement};
+use crate::ast::{
+    BooleanLiteral, Expression, ExpressionStatement, IntegerLiteral, ReturnStatement,
+};
 
 type PrefixParseFn = fn(&mut Parser) -> Option<Box<dyn Expression>>;
 type InfixParseFn = fn(Box<dyn Expression>) -> Box<dyn Expression>;
@@ -41,6 +43,8 @@ impl Parser {
 
         parser.register_prefix_function(TokenType::Ident, |parser| parser.parse_identifier());
         parser.register_prefix_function(TokenType::Int, |parser| parser.parse_integer_literal());
+        parser.register_prefix_function(TokenType::True, |parser| parser.parse_boolean_literal());
+        parser.register_prefix_function(TokenType::False, |parser| parser.parse_boolean_literal());
         parser
     }
 
@@ -203,6 +207,18 @@ impl Parser {
             Err(_) => {
                 self.errors
                     .push(format!("Could not parse {} as integer", token.literal));
+                None
+            }
+        }
+    }
+
+    pub fn parse_boolean_literal(&mut self) -> Option<Box<dyn Expression>> {
+        let token = self.cur_token.clone();
+        match token.literal.parse::<bool>() {
+            Ok(value) => Some(Box::new(BooleanLiteral::new(token, value))),
+            Err(_) => {
+                self.errors
+                    .push(format!("Could not parse {} as a bool", token.literal));
                 None
             }
         }

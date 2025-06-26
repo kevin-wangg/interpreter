@@ -158,6 +158,8 @@ impl Statement for ExpressionStatement {}
 
 // ========== Expression statement End ==========
 
+// ========== Integer literal Start ==========
+
 pub struct IntegerLiteral {
     pub token: Token,
     pub value: i64,
@@ -184,3 +186,36 @@ impl Node for IntegerLiteral {
 }
 
 impl Expression for IntegerLiteral {}
+
+// ========== Integer literal End ==========
+
+// ========== Boolean literal Start ==========
+
+pub struct BooleanLiteral {
+    pub token: Token,
+    pub value: bool,
+}
+
+impl BooleanLiteral {
+    pub fn new(token: Token, value: bool) -> Self {
+        Self { token, value }
+    }
+}
+
+impl Node for BooleanLiteral {
+    fn token_literal(&self) -> String {
+        self.token.literal.clone()
+    }
+
+    fn as_any(&self) -> &dyn Any {
+        self
+    }
+
+    fn string(&self) -> String {
+        self.value.to_string()
+    }
+}
+
+impl Expression for BooleanLiteral {}
+
+// ========== Boolean literal End ==========

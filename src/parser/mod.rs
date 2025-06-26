@@ -231,6 +231,7 @@ impl Parser {
     pub fn parse_prefix_expression(&mut self) -> Option<Box<dyn Expression>> {
         let token = self.cur_token.clone();
         let operator = token.literal.clone();
+        self.next_token();
         let right = self.parse_expression(Precendence::Prefix as i32)?;
         Some(Box::new(PrefixExpression::new(token, &operator, right)))
     }

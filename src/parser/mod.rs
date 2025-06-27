@@ -180,7 +180,7 @@ impl Parser {
                     Parser::token_to_precedence(self.peek_token.token_type) as i32;
                 if precendence < next_precedence {
                     let infix_function = if let Some(f) =
-                        self.infix_parse_functions.get(&self.cur_token.token_type)
+                        self.infix_parse_functions.get(&self.peek_token.token_type)
                     {
                         f.clone()
                     } else {
@@ -188,6 +188,8 @@ impl Parser {
                     };
                     self.next_token();
                     left = infix_function(self, left)?;
+                } else {
+                    break;
                 }
             }
         }

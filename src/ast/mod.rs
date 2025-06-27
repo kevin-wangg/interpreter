@@ -220,6 +220,8 @@ impl Expression for BooleanLiteral {}
 
 // ========== Boolean literal End ==========
 
+// ========== Prefix expression Start ==========
+
 pub struct PrefixExpression {
     pub token: Token,
     pub operator: String,
@@ -251,3 +253,44 @@ impl Node for PrefixExpression {
 }
 
 impl Expression for PrefixExpression {}
+
+// ========== Prefix expression End ==========
+
+pub struct InfixExpression {
+    pub token: Token,
+    pub operator: String,
+    pub left: Box<dyn Expression>,
+    pub right: Box<dyn Expression>,
+}
+
+impl InfixExpression {
+    pub fn new(
+        token: Token,
+        operator: &str,
+        left: Box<dyn Expression>,
+        right: Box<dyn Expression>,
+    ) -> Self {
+        Self {
+            token,
+            operator: operator.to_string(),
+            left,
+            right,
+        }
+    }
+}
+
+impl Node for InfixExpression {
+    fn token_literal(&self) -> String {
+        self.token.literal.clone()
+    }
+
+    fn as_any(&self) -> &dyn Any {
+        self
+    }
+
+    fn string(&self) -> String {
+        format!("({}{}{})", self.left.string(), self.operator, self.right.string())
+    }
+}
+
+impl Expression for InfixExpression {}

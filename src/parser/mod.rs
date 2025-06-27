@@ -3,12 +3,12 @@ mod tests;
 use std::collections::HashMap;
 
 use crate::ast::{
-    BooleanLiteral, Expression, ExpressionStatement, IntegerLiteral, PrefixExpression,
-    ReturnStatement,
+    BooleanLiteral, Expression, ExpressionStatement, InfixExpression, IntegerLiteral,
+    PrefixExpression, ReturnStatement,
 };
 
 type PrefixParseFn = fn(&mut Parser) -> Option<Box<dyn Expression>>;
-type InfixParseFn = fn(Box<dyn Expression>) -> Box<dyn Expression>;
+type InfixParseFn = fn(&mut Parser, Box<dyn Expression>) -> Option<Box<dyn Expression>>;
 
 use crate::{
     ast::{Identifier, LetStatement, Program, Statement},
@@ -49,6 +49,37 @@ impl Parser {
         parser
             .register_prefix_function(TokenType::Minus, |parser| parser.parse_prefix_expression());
         parser.register_prefix_function(TokenType::Bang, |parser| parser.parse_prefix_expression());
+
+        parser.register_infix_function(TokenType::Eq, |parser, left| {
+            parser.parse_infix_expression(left)
+        });
+        parser.register_infix_function(TokenType::NotEq, |parser, left| {
+            parser.parse_infix_expression(left)
+        });
+        parser.register_infix_function(TokenType::LArrow, |parser, left| {
+            parser.parse_infix_expression(left)
+        });
+        parser.register_infix_function(TokenType::RArrow, |parser, left| {
+            parser.parse_infix_expression(left)
+        });
+        parser.register_infix_function(TokenType::LessEq, |parser, left| {
+            parser.parse_infix_expression(left)
+        });
+        parser.register_infix_function(TokenType::GreaterEq, |parser, left| {
+            parser.parse_infix_expression(left)
+        });
+        parser.register_infix_function(TokenType::Plus, |parser, left| {
+            parser.parse_infix_expression(left)
+        });
+        parser.register_infix_function(TokenType::Minus, |parser, left| {
+            parser.parse_infix_expression(left)
+        });
+        parser.register_infix_function(TokenType::Star, |parser, left| {
+            parser.parse_infix_expression(left)
+        });
+        parser.register_infix_function(TokenType::Slash, |parser, left| {
+            parser.parse_infix_expression(left)
+        });
         parser
     }
 
@@ -82,26 +113,6 @@ impl Parser {
             // Default case is assume we are parsing an expression statement
             _ => self.parse_expression_statement(),
         }
-    }
-
-    fn parse_expression_statement(&mut self) -> Option<Box<dyn Statement>> {
-        let token = self.cur_token.clone();
-        let expression = self.parse_expression(Precendence::Lowest as i32)?;
-
-        if !self.expect_peek(TokenType::Semicolon) {
-            self.expect_error(TokenType::Semicolon);
-            return None;
-        }
-
-        Some(Box::new(ExpressionStatement::new(token, expression)))
-    }
-
-    fn parse_expression(&mut self, precendence: i32) -> Option<Box<dyn Expression>> {
-        let prefix_function = self
-            .prefix_parse_functions
-            .get(&self.cur_token.token_type)?;
-
-        prefix_function(self)
     }
 
     fn parse_let_statement(&mut self) -> Option<Box<dyn Statement>> {
@@ -142,6 +153,121 @@ impl Parser {
         Some(Box::new(ReturnStatement::new(token)))
     }
 
+    fn parse_expression_statement(&mut self) -> Option<Box<dyn Statement>> {
+        let token = self.cur_token.clone();
+        let expression = self.parse_expression(Precedence::Lowest as i32)?;
+        if !self.expect_peek(TokenType::Semicolon) {
+            self.expect_error(TokenType::Semicolon);
+            return None;
+        }
+        Some(Box::new(ExpressionStatement::new(token, expression)))
+    }
+
+    fn parse_expression(&mut self, precendence: i32) -> Option<Box<dyn Expression>> {
+        let prefix_function =
+            if let Some(f) = self.prefix_parse_functions.get(&self.cur_token.token_type) {
+                f
+            } else {
+                self.no_prefix_function_error(self.cur_token.token_type);
+                return None;
+            };
+        let mut left = prefix_function(self)?;
+        loop {
+            if self.peek_token.token_type == TokenType::Semicolon {
+                break;
+            } else {
+                let next_precedence =
+                    Parser::token_to_precedence(self.peek_token.token_type) as i32;
+                if precendence < next_precedence {
+                    let infix_function = if let Some(f) =
+                        self.infix_parse_functions.get(&self.cur_token.token_type)
+                    {
+                        f.clone()
+                    } else {
+                        break;
+                    };
+                    self.next_token();
+                    left = infix_function(self, left)?;
+                }
+            }
+        }
+        Some(left)
+    }
+
+    fn parse_identifier(&mut self) -> Option<Box<dyn Expression>> {
+        Some(Box::new(Identifier::new(
+            self.cur_token.clone(),
+            &self.cur_token.literal,
+        )))
+    }
+
+    fn parse_integer_literal(&mut self) -> Option<Box<dyn Expression>> {
+        let token = self.cur_token.clone();
+        match token.literal.parse::<i64>() {
+            Ok(value) => Some(Box::new(IntegerLiteral::new(token, value))),
+            Err(_) => {
+                self.errors
+                    .push(format!("Could not parse {} as integer", token.literal));
+                None
+            }
+        }
+    }
+
+    fn parse_boolean_literal(&mut self) -> Option<Box<dyn Expression>> {
+        let token = self.cur_token.clone();
+        match token.literal.parse::<bool>() {
+            Ok(value) => Some(Box::new(BooleanLiteral::new(token, value))),
+            Err(_) => {
+                self.errors
+                    .push(format!("Could not parse {} as a bool", token.literal));
+                None
+            }
+        }
+    }
+
+    pub fn parse_prefix_expression(&mut self) -> Option<Box<dyn Expression>> {
+        let token = self.cur_token.clone();
+        let operator = token.literal.clone();
+        self.next_token();
+        let right = self.parse_expression(Precedence::Prefix as i32)?;
+        Some(Box::new(PrefixExpression::new(token, &operator, right)))
+    }
+
+    fn parse_infix_expression(&mut self, left: Box<dyn Expression>) -> Option<Box<dyn Expression>> {
+        let token = self.cur_token.clone();
+        let operator = token.literal.clone();
+        let precendence = Parser::token_to_precedence(self.cur_token.token_type);
+        self.next_token();
+        let right = self.parse_expression(precendence as i32)?;
+        Some(Box::new(InfixExpression::new(
+            token, &operator, left, right,
+        )))
+    }
+
+    fn no_prefix_function_error(&mut self, token_type: TokenType) {
+        self.errors.push(format!(
+            "No prefix parse function found for {:?} found",
+            token_type
+        ))
+    }
+
+    fn token_to_precedence(token_type: TokenType) -> Precedence {
+        match token_type {
+            TokenType::Eq => Precedence::Equals,
+            TokenType::NotEq => Precedence::Equals,
+            TokenType::LArrow => Precedence::LessGreater,
+            TokenType::RArrow => Precedence::LessGreater,
+            TokenType::LessEq => Precedence::LessGreater,
+            TokenType::GreaterEq => Precedence::LessGreater,
+            TokenType::Plus => Precedence::Sum,
+            TokenType::Minus => Precedence::Sum,
+            TokenType::Star => Precedence::Product,
+            TokenType::Slash => Precedence::Product,
+            TokenType::LParen => Precedence::Call,
+            _ => Precedence::Lowest,
+        }
+    }
+
     /// If `peek_token` is equal to the expected token type, then
     /// advance the token pointers and return true. Otherwise
     /// returns false and the token pointers do not change.
@@ -179,65 +305,22 @@ impl Parser {
         self.peek_token = self.lexer.next_token();
     }
 
-    pub fn get_errors(&self) -> &Vec<String> {
+    fn get_errors(&self) -> &Vec<String> {
         &self.errors
     }
 
-    pub fn register_prefix_function(
-        &mut self,
-        token_type: TokenType,
-        prefix_function: PrefixParseFn,
-    ) {
+    fn register_prefix_function(&mut self, token_type: TokenType, prefix_function: PrefixParseFn) {
         self.prefix_parse_functions
             .insert(token_type, prefix_function);
     }
 
-    pub fn register_infix_function(&mut self, token_type: TokenType, infix_function: InfixParseFn) {
+    fn register_infix_function(&mut self, token_type: TokenType, infix_function: InfixParseFn) {
         self.infix_parse_functions
             .insert(token_type, infix_function);
     }
-
-    pub fn parse_identifier(&mut self) -> Option<Box<dyn Expression>> {
-        Some(Box::new(Identifier::new(
-            self.cur_token.clone(),
-            &self.cur_token.literal,
-        )))
-    }
-
-    pub fn parse_integer_literal(&mut self) -> Option<Box<dyn Expression>> {
-        let token = self.cur_token.clone();
-        match token.literal.parse::<i64>() {
-            Ok(value) => Some(Box::new(IntegerLiteral::new(token, value))),
-            Err(_) => {
-                self.errors
-                    .push(format!("Could not parse {} as integer", token.literal));
-                None
-            }
-        }
-    }
-
-    pub fn parse_boolean_literal(&mut self) -> Option<Box<dyn Expression>> {
-        let token = self.cur_token.clone();
-        match token.literal.parse::<bool>() {
-            Ok(value) => Some(Box::new(BooleanLiteral::new(token, value))),
-            Err(_) => {
-                self.errors
-                    .push(format!("Could not parse {} as a bool", token.literal));
-                None
-            }
-        }
-    }
-
-    pub fn parse_prefix_expression(&mut self) -> Option<Box<dyn Expression>> {
-        let token = self.cur_token.clone();
-        let operator = token.literal.clone();
-        self.next_token();
-        let right = self.parse_expression(Precendence::Prefix as i32)?;
-        Some(Box::new(PrefixExpression::new(token, &operator, right)))
-    }
 }
 
-enum Precendence {
+enum Precedence {
     Lowest,
     Equals,
     LessGreater,

@@ -1,3 +1,5 @@
+use crate::ast::InfixExpression;
+#[cfg(test)]
 use crate::ast::{BooleanLiteral, IntegerLiteral, PrefixExpression};
 #[cfg(test)]
 use crate::ast::{ExpressionStatement, Identifier, LetStatement, Node, ReturnStatement};
@@ -178,6 +180,73 @@ fn test_bang_expression() {
         assert_eq!(right_operand.token_literal(), "true");
     } else {
         assert!(false, "Failed to parse program");
+    }
+}
+
+#[test]
+fn test_minus_expression() {
+    let input = "-42;";
+    let lexer = Lexer::new(input);
+    let mut parser = Parser::new(lexer);
+
+    if let Some(program) = parser.parse_program() {
+        check_parser_errors(&parser);
+        assert!(program.statements.len() == 1);
+
+        let statement = &program.statements[0];
+        let expression_statement = statement
+            .as_any()
+            .downcast_ref::<ExpressionStatement>()
+            .expect("Expected expression statement");
+
+        let prefix_expression = expression_statement
+            .expression
+            .as_any()
+            .downcast_ref::<PrefixExpression>()
+            .expect("Expected prefix expression");
+
+        assert_eq!(prefix_expression.operator, "-");
+        assert_eq!(prefix_expression.token_literal(), "-");
+
+        let right_operand = prefix_expression
+            .right
+            .as_any()
+            .downcast_ref::<IntegerLiteral>()
+            .expect("Expected integer literal as right operand");
+
+        assert_eq!(right_operand.value, 42);
+        assert_eq!(right_operand.token_literal(), "42");
+    } else {
+        assert!(false, "Failed to parse program");
+    }
+}
+
+#[test]
+fn test_infix_expressions() {
+    let tests = vec![vec!["5+5;", "5", "+", "5"]];
+
+    for test in tests {
+        let lexer = Lexer::new(test[0]);
+        let mut parser = Parser::new(lexer);
+        if let Some(program) = parser.parse_program() {
+            check_parser_errors(&parser);
+            assert!(program.statements.len() == 1);
+            let statement = &program.statements[0];
+            let expression_statement = statement
+                .as_any()
+                .downcast_ref::<ExpressionStatement>()
+                .expect("Expected expression statement");
+            let infix_expression = expression_statement
+                .expression
+                .as_any()
+                .downcast_ref::<InfixExpression>()
+                .expect("Expected infix expression");
+            assert_eq!(infix_expression.left.string(), test[1]);
+            assert_eq!(infix_expression.operator, test[2]);
+            assert_eq!(infix_expression.right.string(), test[3]);
+        } else {
+            assert!(false, "Failed to parse program");
+        }
     }
 }
 

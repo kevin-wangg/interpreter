@@ -223,7 +223,21 @@ fn test_minus_expression() {
 
 #[test]
 fn test_infix_expressions() {
-    let tests = vec![vec!["5+5;", "5", "+", "5"]];
+    let tests = vec![
+        vec!["5 + 5;", "5", "+", "5"],
+        vec!["5 - 5;", "5", "-", "5"],
+        vec!["5 * 5;", "5", "*", "5"],
+        vec!["5 / 5;", "5", "/", "5"],
+        vec!["5 > 5;", "5", ">", "5"],
+        vec!["5 < 5;", "5", "<", "5"],
+        vec!["5 == 5;", "5", "==", "5"],
+        vec!["5 != 5;", "5", "!=", "5"],
+        vec!["5 >= 5;", "5", ">=", "5"],
+        vec!["5 <= 5;", "5", "<=", "5"],
+        vec!["true == true;", "true", "==", "true"],
+        vec!["true != false;", "true", "!=", "false"],
+        vec!["false == false;", "false", "==", "false"],
+    ];
 
     for test in tests {
         let lexer = Lexer::new(test[0]);

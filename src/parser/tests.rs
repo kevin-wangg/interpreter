@@ -264,6 +264,39 @@ fn test_infix_expressions() {
     }
 }
 
+#[test]
+fn test_operator_precedence() {
+    let tests = vec![
+        ("5 + 5 * 5;", "(5+(5*5))"),
+        ("5 * 5 + 5;", "((5*5)+5)"),
+        ("2 + 3 * 4 + 5;", "((2+(3*4))+5)"),
+        ("2 * 3 + 4 * 5;", "((2*3)+(4*5))"),
+        ("5 + 5 / 5;", "(5+(5/5))"),
+        ("5 / 5 + 5;", "((5/5)+5)"),
+        ("3 + 4 * 5 == 3 * 1 + 4 * 5;", "((3+(4*5))==((3*1)+(4*5)))"),
+        ("3 > 5 == false;", "((3>5)==false)"),
+        ("3 < 5 == true;", "((3<5)==true)"),
+    ];
+
+    for (input, expected) in tests {
+        let lexer = Lexer::new(input);
+        let mut parser = Parser::new(lexer);
+        if let Some(program) = parser.parse_program() {
+            check_parser_errors(&parser);
+            assert!(program.statements.len() == 1);
+            let statement = &program.statements[0];
+            let expression_statement = statement
+                .as_any()
+                .downcast_ref::<ExpressionStatement>()
+                .expect("Expected expression statement");
+            let actual = expression_statement.expression.string();
+            assert_eq!(actual, expected, "Input: {}", input);
+        } else {
+            assert!(false, "Failed to parse program for input: {}", input);
+        }
+    }
+}
+
 #[cfg(test)]
 fn check_parser_errors(parser: &Parser) {
     let errors = parser.get_errors();

@@ -1,3 +1,4 @@
+#[cfg(test)]
 use crate::ast::InfixExpression;
 #[cfg(test)]
 use crate::ast::{BooleanLiteral, IntegerLiteral, PrefixExpression};
@@ -7,6 +8,8 @@ use crate::ast::{ExpressionStatement, Identifier, LetStatement, Node, ReturnStat
 use crate::lexer::Lexer;
 #[cfg(test)]
 use crate::parser::Parser;
+#[cfg(test)]
+use crate::parser::check_parser_errors;
 #[cfg(test)]
 use crate::token::TokenType;
 
@@ -294,17 +297,6 @@ fn test_operator_precedence() {
         } else {
             assert!(false, "Failed to parse program for input: {}", input);
         }
-    }
-}
-
-#[cfg(test)]
-fn check_parser_errors(parser: &Parser) {
-    let errors = parser.get_errors();
-    if !errors.is_empty() {
-        for error in errors {
-            eprintln!("Parser error: {}", error);
-        }
-        assert!(false, "Parser has {} error(s)", errors.len());
     }
 }
 

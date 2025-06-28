@@ -49,6 +49,9 @@ impl Parser {
         parser
             .register_prefix_function(TokenType::Minus, |parser| parser.parse_prefix_expression());
         parser.register_prefix_function(TokenType::Bang, |parser| parser.parse_prefix_expression());
+        parser.register_prefix_function(TokenType::LParen, |parser| {
+            parser.parse_grouped_expression()
+        });
 
         parser.register_infix_function(TokenType::Eq, |parser, left| {
             parser.parse_infix_expression(left)
@@ -83,7 +86,7 @@ impl Parser {
         parser
     }
 
-    fn parse_program(&mut self) -> Option<Program> {
+    pub fn parse_program(&mut self) -> Option<Program> {
         let mut program = Program::new(Vec::new());
 
         while self.cur_token.token_type != TokenType::Eof {
@@ -246,6 +249,18 @@ impl Parser {
         )))
     }
 
+    fn parse_grouped_expression(&mut self) -> Option<Box<dyn Expression>> {
+        self.next_token();
+        let expression = self.parse_expression(Precedence::Lowest as i32)?;
+        if self.peek_token.token_type == TokenType::RParen {
+            self.next_token();
+            Some(expression)
+        } else {
+            self.expect_error(TokenType::RParen);
+            None
+        }
+    }
+
     fn no_prefix_function_error(&mut self, token_type: TokenType) {
         self.errors.push(format!(
             "No prefix parse function found for {:?} found",
@@ -319,6 +334,16 @@ impl Parser {
     fn register_infix_function(&mut self, token_type: TokenType, infix_function: InfixParseFn) {
         self.infix_parse_functions
             .insert(token_type, infix_function);
+    }
+}
+
+pub fn check_parser_errors(parser: &Parser) {
+    let errors = parser.get_errors();
+    if !errors.is_empty() {
+        for error in errors {
+            eprintln!("Parser error: {}", error);
+        }
+        assert!(false, "Parser has {} error(s)", errors.len());
     }
 }
 

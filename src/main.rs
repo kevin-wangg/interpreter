@@ -6,7 +6,7 @@ mod token;
 use std::io;
 
 use lexer::Lexer;
-use token::TokenType;
+use parser::{Parser, check_parser_errors};
 
 fn main() {
     println!("Welcome to the Monkey programming language!");
@@ -20,18 +20,15 @@ fn main() {
                 break;
             }
             Ok(_) => {
-                let mut lexer = Lexer::new(&input_string);
-
-                loop {
-                    let token = lexer.next_token();
-                    if token.token_type == TokenType::Illegal {
-                        println!("Illegal token found: {}", token.literal);
-                        break;
-                    } else if token.token_type == TokenType::Eof {
-                        break;
-                    } else {
-                        println!("{}", token.literal);
+                let lexer = Lexer::new(&input_string);
+                let mut parser = Parser::new(lexer);
+                if let Some(program) = parser.parse_program() {
+                    check_parser_errors(&parser);
+                    for statement in program.statements {
+                        println!("{}", statement.string());
                     }
+                } else {
+                    assert!(false, "Failed to parser program");
                 }
             }
             Err(error) => {

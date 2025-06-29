@@ -286,7 +286,7 @@ impl Node for InfixExpression {
     }
 
     fn string(&self) -> String {
-        format!("({}{}{})", self.left.string(), self.operator, self.right.string())
+        format!("({} {} {})", self.left.string(), self.operator, self.right.string())
     }
 }
 

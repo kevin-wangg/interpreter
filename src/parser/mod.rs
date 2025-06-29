@@ -138,9 +138,12 @@ impl Parser {
         if !self.expect_peek(TokenType::Assign) {
             return None;
         }
-        // Skip to end of statement for now since parsing expressions is not yet supported
-        self.skip_to_statement_end();
-        Some(Box::new(LetStatement::new(token, name)))
+        // Advance token to start of expression
+        self.next_token();
+        let value = self.parse_expression(Precedence::Lowest as i32)?;
+        // Advance token to the semicolon
+        self.next_token();
+        Some(Box::new(LetStatement::new(token, name, value)))
     }
 
     fn parse_return_statement(&mut self) -> Option<Box<dyn Statement>> {
@@ -151,9 +154,12 @@ impl Parser {
         } else {
             return None;
         };
-        // Skip to the end of the statement for now since parsing expressions is not yet supported
-        self.skip_to_statement_end();
-        Some(Box::new(ReturnStatement::new(token)))
+        // Advance token to start of expression
+        self.next_token();
+        let return_value = self.parse_expression(Precedence::Lowest as i32)?;
+        // Advance token token to the semicolon
+        self.next_token();
+        Some(Box::new(ReturnStatement::new(token, return_value)))
     }
 
     fn parse_expression_statement(&mut self) -> Option<Box<dyn Statement>> {
@@ -166,6 +172,9 @@ impl Parser {
         Some(Box::new(ExpressionStatement::new(token, expression)))
     }
 
+    /// Parses an expression and returns an AST node representing that expression.
+    /// This function consumes tokens up to and including the last token in the expression.
+    /// Namely, it does NOT consume the semicolon following an expression.
     fn parse_expression(&mut self, precendence: i32) -> Option<Box<dyn Expression>> {
         let prefix_function =
             if let Some(f) = self.prefix_parse_functions.get(&self.cur_token.token_type) {

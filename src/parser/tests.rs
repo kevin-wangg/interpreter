@@ -25,6 +25,7 @@ fn test_let_statements() {
     let mut parser = Parser::new(lexer);
 
     let expected_identifier_literals = vec!["x", "y", "foobar"];
+    let expected_values = vec!["5", "10", "82388"];
     if let Some(program) = parser.parse_program() {
         check_parser_errors(&parser);
         assert!(program.statements.len() == 3);
@@ -37,7 +38,8 @@ fn test_let_statements() {
 
             assert!(check_let_statement(
                 let_statement,
-                expected_identifier_literals[i]
+                expected_identifier_literals[i],
+                expected_values[i]
             ))
         }
     } else {
@@ -51,6 +53,7 @@ fn test_return_statements() {
         return 10;
         return foo;
     ";
+    let expected_values = vec!["10", "foo"];
     let lexer = Lexer::new(input);
     let mut parser = Parser::new(lexer);
     if let Some(program) = parser.parse_program() {
@@ -62,8 +65,7 @@ fn test_return_statements() {
                 .as_any()
                 .downcast_ref::<ReturnStatement>()
                 .expect("Expected return statement");
-
-            assert!(check_return_statement(return_statement))
+            assert!(check_return_statement(return_statement, expected_values[i]))
         }
     } else {
         assert!(false, "Failed to parse program")
@@ -300,22 +302,22 @@ fn test_operator_precedence() {
     }
 }
 
-// TODO: Add check for expression literal when expression parsing is supported
 #[cfg(test)]
 fn check_let_statement(
     let_statement: &LetStatement,
     expected_identifier_literal: &str,
-    /*expected_expression_literal: &str,*/
+    expected_expression_literal: &str,
 ) -> bool {
     let_statement.token.token_type == TokenType::Let
         && let_statement.name.value == expected_identifier_literal
+        && let_statement.value.string() == expected_expression_literal
 }
 
-// TODO: Add check for expression literal when expression parsing is supported
 #[cfg(test)]
 fn check_return_statement(
     return_statement: &ReturnStatement,
-    /*expected_expression_literal: &str*/
+    expected_expression_literal: &str,
 ) -> bool {
     return_statement.token.token_type == TokenType::Return
+    && return_statement.return_value.string() == expected_expression_literal
 }

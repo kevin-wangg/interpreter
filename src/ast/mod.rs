@@ -66,14 +66,12 @@ impl Expression for Identifier {}
 pub struct LetStatement {
     pub token: Token,
     pub name: Identifier,
-    // TODO: Uncomment this when parsing Expressions is supported
-    // pub value: Box<dyn Expression>,
+    pub value: Box<dyn Expression>,
 }
 
 impl LetStatement {
-    // TODO: Add a value parameter when parsing Expressions is supported
-    pub fn new(token: Token, name: Identifier) -> Self {
-        LetStatement { token, name }
+    pub fn new(token: Token, name: Identifier, value: Box<dyn Expression>) -> Self {
+        LetStatement { token, name, value }
     }
 }
 
@@ -87,7 +85,7 @@ impl Node for LetStatement {
     }
 
     fn string(&self) -> String {
-        format!("let {} = <placeholder>;", self.name.string())
+        format!("let {} = {};", self.name.string(), self.value.string())
     }
 }
 
@@ -99,13 +97,12 @@ impl Statement for LetStatement {}
 
 pub struct ReturnStatement {
     pub token: Token,
-    // TODO: Uncomment this when parsing Expressions is supported
-    // pub return_value: Box<dyn Expression>,
+    pub return_value: Box<dyn Expression>,
 }
 
 impl ReturnStatement {
-    pub fn new(token: Token /*return_value: Box<dyn Expression>*/) -> Self {
-        Self { token }
+    pub fn new(token: Token, return_value: Box<dyn Expression>) -> Self {
+        Self { token, return_value }
     }
 }
 
@@ -119,7 +116,7 @@ impl Node for ReturnStatement {
     }
 
     fn string(&self) -> String {
-        "return <placeholder>".to_string()
+        format!("return {}", self.return_value.string())
     }
 }
 

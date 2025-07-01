@@ -72,6 +72,17 @@ fn test_return_statements() {
     }
 }
 
+// Not really a complete test since it doesn't call `parse_program`, but still included
+// to make sure block statement parsing works.
+#[test]
+fn test_block_statement() {
+    let input = "{ let a = 10; a + b; return 10; }";
+    let lexer = Lexer::new(input);
+    let mut parser = Parser::new(lexer);
+    let block_statement = parser.parse_block_statement().expect("Failed to parser block statement");
+    assert_eq!(block_statement.string(), "{ let a = 10; (a + b); return 10; }");
+}
+
 #[test]
 fn test_identifier_expression() {
     let input = "foobar;";

@@ -3,8 +3,7 @@ mod tests;
 use std::collections::HashMap;
 
 use crate::ast::{
-    BooleanLiteral, Expression, ExpressionStatement, InfixExpression, IntegerLiteral,
-    PrefixExpression, ReturnStatement,
+    BlockStatement, BooleanLiteral, Expression, ExpressionStatement, InfixExpression, IntegerLiteral, PrefixExpression, ReturnStatement
 };
 
 type PrefixParseFn = fn(&mut Parser) -> Option<Box<dyn Expression>>;
@@ -96,7 +95,6 @@ impl Parser {
                 // If we failed to parse the statement, then just skip to the end to avoid the bad tokens.
                 self.skip_to_statement_end();
             }
-
             // Add a parser error if the statement does not end with a semicolon, but still continue parsing
             // following statements.
             if self.cur_token.token_type != TokenType::Semicolon {
@@ -118,6 +116,33 @@ impl Parser {
         }
     }
 
+    // When this function is called, self.cur_token should be pointing to a
+    // token with type TokenType::LBrace
+    fn parse_block_statement(&mut self) -> Option<Box<dyn Statement>> {
+        let token = if self.cur_token.token_type == TokenType::LBrace {
+            self.cur_token.clone()
+        } else {
+            return None;
+        };
+        self.next_token();
+        let mut statements = Vec::new();
+        while self.peek_token.token_type != TokenType::Eof {
+            let statement = self.parse_statement()?;
+            statements.push(statement);
+            if self.cur_token.token_type != TokenType::Semicolon {
+                self.expect_error(TokenType::Semicolon);
+            } else {
+                self.next_token();
+            }
+            if self.cur_token.token_type == TokenType::RBrace {
+                break;
+            }
+        }
+        Some(Box::new(BlockStatement::new(token, statements)))
+    }
+
+    // When this function is called, self.cur_token should be pointing to a
+    // token with type TokenType::Let
     fn parse_let_statement(&mut self) -> Option<Box<dyn Statement>> {
         // This check is technically not needed since if we enter this function,
         // the current token should have TokenType::Let.
@@ -146,6 +171,8 @@ impl Parser {
         Some(Box::new(LetStatement::new(token, name, value)))
     }
 
+    // When this function is called, self.cur_token should be pointing to a token with
+    // type TokenType::Return
     fn parse_return_statement(&mut self) -> Option<Box<dyn Statement>> {
         // This check is technically not needed since if we enter this function,
         // the current token should have TokenType::Return.

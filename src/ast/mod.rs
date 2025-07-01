@@ -102,7 +102,10 @@ pub struct ReturnStatement {
 
 impl ReturnStatement {
     pub fn new(token: Token, return_value: Box<dyn Expression>) -> Self {
-        Self { token, return_value }
+        Self {
+            token,
+            return_value,
+        }
     }
 }
 
@@ -116,7 +119,7 @@ impl Node for ReturnStatement {
     }
 
     fn string(&self) -> String {
-        format!("return {}", self.return_value.string())
+        format!("return {};", self.return_value.string())
     }
 }
 
@@ -253,6 +256,8 @@ impl Expression for PrefixExpression {}
 
 // ========== Prefix expression End ==========
 
+// ========== Infix expression Start ==========
+
 pub struct InfixExpression {
     pub token: Token,
     pub operator: String,
@@ -286,8 +291,103 @@ impl Node for InfixExpression {
     }
 
     fn string(&self) -> String {
-        format!("({} {} {})", self.left.string(), self.operator, self.right.string())
+        format!(
+            "({} {} {})",
+            self.left.string(),
+            self.operator,
+            self.right.string()
+        )
     }
 }
 
 impl Expression for InfixExpression {}
+
+// ========== Infix expression End ==========
+
+// ========== IfElseExpression Start ==========
+
+pub struct IfElseExpression {
+    pub token: Token,
+    pub condition: Box<dyn Expression>,
+    pub consequence: BlockStatement,
+    pub alternative: BlockStatement,
+}
+
+impl IfElseExpression {
+    pub fn new(
+        token: Token,
+        condition: Box<dyn Expression>,
+        consequence: BlockStatement,
+        alternative: BlockStatement,
+    ) -> Self {
+        Self {
+            token,
+            condition,
+            consequence,
+            alternative,
+        }
+    }
+}
+
+impl Node for IfElseExpression {
+    fn token_literal(&self) -> String {
+        self.token.literal.clone()
+    }
+
+    fn as_any(&self) -> &dyn Any {
+        self
+    }
+
+    fn string(&self) -> String {
+        format!(
+            "if {} {} else {}",
+            self.condition.string(),
+            self.consequence.string(),
+            self.consequence.string()
+        )
+    }
+}
+
+impl Expression for IfElseExpression {}
+
+// ========== IfElseExpression End ==========
+
+// ========== BlockStatement Start ==========
+
+pub struct BlockStatement {
+    pub token: Token,
+    pub statements: Vec<Box<dyn Statement>>,
+}
+
+impl BlockStatement {
+    pub fn new(token: Token, statements: Vec<Box<dyn Statement>>) -> Self {
+        Self {
+            token,
+            statements
+        }
+    }
+}
+
+impl Node for BlockStatement {
+    fn token_literal(&self) -> String {
+        self.token.literal.clone()
+    }
+
+    fn as_any(&self) -> &dyn Any {
+        self
+    }
+
+    fn string(&self) -> String {
+        let statements = self
+            .statements
+            .iter()
+            .map(|statement| statement.string())
+            .collect::<Vec<String>>()
+            .join(" ");
+        format!("{{ {} }}", statements)
+    }
+}
+
+impl Statement for BlockStatement {}
+
+// ========== BlockStatement End ==========

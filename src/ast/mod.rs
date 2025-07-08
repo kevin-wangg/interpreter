@@ -304,21 +304,21 @@ impl Expression for InfixExpression {}
 
 // ========== Infix expression End ==========
 
-// ========== IfElseExpression Start ==========
+// ========== IfExpression Start ==========
 
-pub struct IfElseExpression {
+pub struct IfExpression {
     pub token: Token,
     pub condition: Box<dyn Expression>,
     pub consequence: BlockStatement,
-    pub alternative: BlockStatement,
+    pub alternative: Option<BlockStatement>,
 }
 
-impl IfElseExpression {
+impl IfExpression {
     pub fn new(
         token: Token,
         condition: Box<dyn Expression>,
         consequence: BlockStatement,
-        alternative: BlockStatement,
+        alternative: Option<BlockStatement>,
     ) -> Self {
         Self {
             token,
@@ -329,7 +329,7 @@ impl IfElseExpression {
     }
 }
 
-impl Node for IfElseExpression {
+impl Node for IfExpression {
     fn token_literal(&self) -> String {
         self.token.literal.clone()
     }
@@ -348,9 +348,9 @@ impl Node for IfElseExpression {
     }
 }
 
-impl Expression for IfElseExpression {}
+impl Expression for IfExpression {}
 
-// ========== IfElseExpression End ==========
+// ========== IfExpression End ==========
 
 // ========== BlockStatement Start ==========
 

@@ -1,7 +1,7 @@
 #[cfg(test)]
 use crate::ast::InfixExpression;
 #[cfg(test)]
-use crate::ast::{BooleanLiteral, IntegerLiteral, PrefixExpression};
+use crate::ast::{BooleanLiteral, IntegerLiteral, PrefixExpression, IfExpression};
 #[cfg(test)]
 use crate::ast::{ExpressionStatement, Identifier, LetStatement, Node, ReturnStatement};
 #[cfg(test)]
@@ -81,6 +81,40 @@ fn test_block_statement() {
     let mut parser = Parser::new(lexer);
     let block_statement = parser.parse_block_statement().expect("Failed to parser block statement");
     assert_eq!(block_statement.string(), "{ let a = 10; (a + b); return 10; }");
+}
+
+#[test]
+fn test_if_expression() {
+    let input = "if (x < y) { return x; }";
+    let lexer = Lexer::new(input);
+    let mut parser = Parser::new(lexer);
+
+    if true {
+        println!();
+    }
+
+    if let Some(program) = parser.parse_program() {
+        check_parser_errors(&parser);
+        assert!(program.statements.len() == 1);
+
+        let statement = &program.statements[0];
+        let expression_statement = statement
+            .as_any()
+            .downcast_ref::<ExpressionStatement>()
+            .expect("Expected expression statement");
+
+        let if_expression = expression_statement
+            .expression
+            .as_any()
+            .downcast_ref::<IfExpression>()
+            .expect("Expected if expression");
+
+        assert_eq!(if_expression.condition.string(), "(x < y)");
+        assert_eq!(if_expression.consequence.string(), "{ return x; }");
+        assert!(if_expression.alternative.is_none());
+    } else {
+        assert!(false, "Failed to parse program");
+    }
 }
 
 #[test]

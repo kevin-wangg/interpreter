@@ -3,7 +3,8 @@ mod tests;
 use std::collections::HashMap;
 
 use crate::ast::{
-    BlockStatement, BooleanLiteral, Expression, ExpressionStatement, InfixExpression, IntegerLiteral, PrefixExpression, ReturnStatement
+    BlockStatement, BooleanLiteral, Expression, ExpressionStatement, IfExpression, InfixExpression,
+    IntegerLiteral, PrefixExpression, ReturnStatement,
 };
 
 type PrefixParseFn = fn(&mut Parser) -> Option<Box<dyn Expression>>;
@@ -51,6 +52,7 @@ impl Parser {
         parser.register_prefix_function(TokenType::LParen, |parser| {
             parser.parse_grouped_expression()
         });
+        parser.register_prefix_function(TokenType::If, |parser| parser.parse_if_expression());
 
         parser.register_infix_function(TokenType::Eq, |parser, left| {
             parser.parse_infix_expression(left)
@@ -90,23 +92,18 @@ impl Parser {
 
         while self.cur_token.token_type != TokenType::Eof {
             if let Some(statement) = self.parse_statement() {
-                program.statements.push(statement)
+                program.statements.push(statement);
             } else {
                 // If we failed to parse the statement, then just skip to the end to avoid the bad tokens.
                 self.skip_to_statement_end();
-            }
-            // Add a parser error if the statement does not end with a semicolon, but still continue parsing
-            // following statements.
-            if self.cur_token.token_type != TokenType::Semicolon {
-                self.expect_error(TokenType::Semicolon);
-            } else {
-                self.next_token();
             }
         }
 
         Some(program)
     }
 
+    // This function should leave the parser in a state where cur_token points to the first token
+    // of the next statement.
     fn parse_statement(&mut self) -> Option<Box<dyn Statement>> {
         match self.cur_token.token_type {
             TokenType::Let => self.parse_let_statement(),
@@ -118,7 +115,7 @@ impl Parser {
 
     // When this function is called, self.cur_token should be pointing to a
     // token with type TokenType::LBrace
-    fn parse_block_statement(&mut self) -> Option<Box<dyn Statement>> {
+    fn parse_block_statement(&mut self) -> Option<BlockStatement> {
         let token = if self.cur_token.token_type == TokenType::LBrace {
             self.cur_token.clone()
         } else {
@@ -129,16 +126,11 @@ impl Parser {
         while self.peek_token.token_type != TokenType::Eof {
             let statement = self.parse_statement()?;
             statements.push(statement);
-            if self.cur_token.token_type != TokenType::Semicolon {
-                self.expect_error(TokenType::Semicolon);
-            } else {
-                self.next_token();
-            }
             if self.cur_token.token_type == TokenType::RBrace {
                 break;
             }
         }
-        Some(Box::new(BlockStatement::new(token, statements)))
+        Some(BlockStatement::new(token, statements))
     }
 
     // When this function is called, self.cur_token should be pointing to a
@@ -168,6 +160,11 @@ impl Parser {
         let value = self.parse_expression(Precedence::Lowest as i32)?;
         // Advance token to the semicolon
         self.next_token();
+        if self.cur_token.token_type != TokenType::Semicolon {
+            self.expect_error(TokenType::Semicolon);
+        } else {
+            self.next_token();
+        }
         Some(Box::new(LetStatement::new(token, name, value)))
     }
 
@@ -186,15 +183,32 @@ impl Parser {
         let return_value = self.parse_expression(Precedence::Lowest as i32)?;
         // Advance token token to the semicolon
         self.next_token();
+        if self.cur_token.token_type != TokenType::Semicolon {
+            self.expect_error(TokenType::Semicolon);
+        } else {
+            self.next_token();
+        }
         Some(Box::new(ReturnStatement::new(token, return_value)))
     }
 
     fn parse_expression_statement(&mut self) -> Option<Box<dyn Statement>> {
         let token = self.cur_token.clone();
         let expression = self.parse_expression(Precedence::Lowest as i32)?;
-        if !self.expect_peek(TokenType::Semicolon) {
-            self.expect_error(TokenType::Semicolon);
-            return None;
+        let requires_semi = self.expr_requires_semi_to_be_stmt(&*expression);
+        // Advance token to potentially a semicolon
+        self.next_token();
+        // If the current token is not a semicolon and semicolon is required, then add a
+        // parser error.
+        // If the current token is not a semicolon but semicolon is not required, then do nothing.
+        // If the currnet token is a semicolon, regardless of whether semicolon is required or not,
+        // advance to the next token.
+        if self.cur_token.token_type != TokenType::Semicolon {
+            if requires_semi {
+                self.expect_error(TokenType::Semicolon);
+                return None;
+            }
+        } else {
+            self.next_token();
         }
         Some(Box::new(ExpressionStatement::new(token, expression)))
     }
@@ -297,6 +311,35 @@ impl Parser {
         }
     }
 
+    fn parse_if_expression(&mut self) -> Option<Box<dyn Expression>> {
+        // This check is technically not needed since if we enter this function,
+        // the current token should have TokenType::If.
+        let token = if self.cur_token.token_type == TokenType::If {
+            self.cur_token.clone()
+        } else {
+            return None;
+        };
+        if !self.expect_peek(TokenType::LParen) {
+            return None;
+        }
+        self.next_token();
+        let condition = self.parse_expression(Precedence::Lowest as i32)?;
+        if !self.expect_peek(TokenType::RParen) {
+            return None;
+        }
+        if !self.expect_peek(TokenType::LBrace) {
+            return None;
+        }
+        let consequence = self.parse_block_statement()?;
+
+        Some(Box::new(IfExpression::new(
+            token,
+            condition,
+            consequence,
+            None,
+        )))
+    }
+
     fn no_prefix_function_error(&mut self, token_type: TokenType) {
         self.errors.push(format!(
             "No prefix parse function found for {:?} found",
@@ -351,6 +394,7 @@ impl Parser {
         {
             self.next_token();
         }
+        self.next_token();
     }
 
     fn next_token(&mut self) {
@@ -370,6 +414,14 @@ impl Parser {
     fn register_infix_function(&mut self, token_type: TokenType, infix_function: InfixParseFn) {
         self.infix_parse_functions
             .insert(token_type, infix_function);
+    }
+
+    fn expr_requires_semi_to_be_stmt(&self, statement: &dyn Expression) -> bool {
+        if statement.as_any().is::<IfExpression>() {
+            false
+        } else {
+            true
+        }
     }
 }
 

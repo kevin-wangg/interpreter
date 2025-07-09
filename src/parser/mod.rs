@@ -235,7 +235,7 @@ impl Parser {
                     let infix_function = if let Some(f) =
                         self.infix_parse_functions.get(&self.peek_token.token_type)
                     {
-                        f.clone()
+                        *f
                     } else {
                         break;
                     };

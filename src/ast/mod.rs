@@ -339,12 +339,23 @@ impl Node for IfExpression {
     }
 
     fn string(&self) -> String {
-        format!(
-            "if {} {} else {}",
-            self.condition.string(),
-            self.consequence.string(),
-            self.consequence.string()
-        )
+        match self.alternative.as_ref() {
+            Some(alternative) => {
+                format!(
+                    "if {} {} else {}",
+                    self.condition.string(),
+                    self.consequence.string(),
+                    alternative.string()
+                )
+            }
+            None => {
+                format!(
+                    "if {} {}",
+                    self.condition.string(),
+                    self.consequence.string(),
+                )
+            }
+        }
     }
 }
 
@@ -361,10 +372,7 @@ pub struct BlockStatement {
 
 impl BlockStatement {
     pub fn new(token: Token, statements: Vec<Box<dyn Statement>>) -> Self {
-        Self {
-            token,
-            statements
-        }
+        Self { token, statements }
     }
 }
 

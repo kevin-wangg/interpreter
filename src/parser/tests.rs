@@ -1,7 +1,7 @@
 #[cfg(test)]
 use crate::ast::InfixExpression;
 #[cfg(test)]
-use crate::ast::{BooleanLiteral, IntegerLiteral, PrefixExpression, IfExpression};
+use crate::ast::{BooleanLiteral, IfExpression, IntegerLiteral, PrefixExpression};
 #[cfg(test)]
 use crate::ast::{ExpressionStatement, Identifier, LetStatement, Node, ReturnStatement};
 #[cfg(test)]
@@ -79,8 +79,13 @@ fn test_block_statement() {
     let input = "{ let a = 10; a + b; return 10; }";
     let lexer = Lexer::new(input);
     let mut parser = Parser::new(lexer);
-    let block_statement = parser.parse_block_statement().expect("Failed to parser block statement");
-    assert_eq!(block_statement.string(), "{ let a = 10; (a + b); return 10; }");
+    let block_statement = parser
+        .parse_block_statement()
+        .expect("Failed to parser block statement");
+    assert_eq!(
+        block_statement.string(),
+        "{ let a = 10; (a + b); return 10; }"
+    );
 }
 
 #[test]
@@ -323,7 +328,10 @@ fn test_operator_precedence() {
         ("2 * 3 + 4 * 5;", "((2 * 3) + (4 * 5))"),
         ("5 + 5 / 5;", "(5 + (5 / 5))"),
         ("5 / 5 + 5;", "((5 / 5) + 5)"),
-        ("3 + 4 * 5 == 3 * 1 + 4 * 5;", "((3 + (4 * 5)) == ((3 * 1) + (4 * 5)))"),
+        (
+            "3 + 4 * 5 == 3 * 1 + 4 * 5;",
+            "((3 + (4 * 5)) == ((3 * 1) + (4 * 5)))",
+        ),
         ("3 > 5 == false;", "((3 > 5) == false)"),
         ("3 < 5 == true;", "((3 < 5) == true)"),
         ("(1 + 2) * 3;", "((1 + 2) * 3)"),
@@ -373,5 +381,5 @@ fn check_return_statement(
     expected_expression_literal: &str,
 ) -> bool {
     return_statement.token.token_type == TokenType::Return
-    && return_statement.return_value.string() == expected_expression_literal
+        && return_statement.return_value.string() == expected_expression_literal
 }

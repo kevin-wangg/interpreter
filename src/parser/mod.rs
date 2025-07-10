@@ -332,12 +332,27 @@ impl Parser {
         }
         let consequence = self.parse_block_statement()?;
 
-        Some(Box::new(IfExpression::new(
-            token,
-            condition,
-            consequence,
-            None,
-        )))
+        self.next_token();
+
+        if self.cur_token.token_type == TokenType::Else {
+            if !self.expect_peek(TokenType::LBrace) {
+                return None;
+            }
+            let alternative = self.parse_block_statement()?;
+            Some(Box::new(IfExpression::new(
+                token,
+                condition,
+                consequence,
+                Some(alternative),
+            )))
+        } else {
+            Some(Box::new(IfExpression::new(
+                token,
+                condition,
+                consequence,
+                None,
+            )))
+        }
     }
 
     fn no_prefix_function_error(&mut self, token_type: TokenType) {

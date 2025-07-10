@@ -123,6 +123,37 @@ fn test_if_expression() {
 }
 
 #[test]
+fn test_if_else_expression() {
+    let input = "if (x < y) { return x; } else { return y; }";
+    let lexer = Lexer::new(input);
+    let mut parser = Parser::new(lexer);
+
+    if let Some(program) = parser.parse_program() {
+        check_parser_errors(&parser);
+        assert!(program.statements.len() == 1);
+
+        let statement = &program.statements[0];
+        let expression_statement = statement
+            .as_any()
+            .downcast_ref::<ExpressionStatement>()
+            .expect("Expected expression statement");
+
+        let if_expression = expression_statement
+            .expression
+            .as_any()
+            .downcast_ref::<IfExpression>()
+            .expect("Expected if expression");
+
+        assert_eq!(if_expression.condition.string(), "(x < y)");
+        assert_eq!(if_expression.consequence.string(), "{ return x; }");
+        assert!(if_expression.alternative.is_some());
+        assert_eq!(if_expression.alternative.as_ref().unwrap().string(), "{ return y; }");
+    } else {
+        assert!(false, "Failed to parse program");
+    }
+}
+
+#[test]
 fn test_identifier_expression() {
     let input = "foobar;";
     let lexer = Lexer::new(input);

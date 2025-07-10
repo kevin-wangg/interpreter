@@ -399,3 +399,37 @@ impl Node for BlockStatement {
 impl Statement for BlockStatement {}
 
 // ========== BlockStatement End ==========
+
+// ========== Function literal Start ==========
+
+pub struct FunctionLiteral {
+    pub token: Token,
+    pub parameters: Vec<Identifier>,
+    pub body: BlockStatement,
+}
+
+impl FunctionLiteral {}
+
+impl Node for FunctionLiteral {
+    fn token_literal(&self) -> String {
+        self.token.literal.clone()
+    }
+
+    fn as_any(&self) -> &dyn Any {
+        self
+    }
+
+    fn string(&self) -> String {
+        let parameter_string = self
+            .parameters
+            .iter()
+            .map(|identifier| identifier.string())
+            .collect::<Vec<_>>()
+            .join(",");
+        format!("fun({}) {}", parameter_string, self.body.string())
+    }
+}
+
+impl Expression for FunctionLiteral {}
+
+// ========== Function literal End ==========

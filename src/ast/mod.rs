@@ -408,7 +408,15 @@ pub struct FunctionLiteral {
     pub body: BlockStatement,
 }
 
-impl FunctionLiteral {}
+impl FunctionLiteral {
+    pub fn new(token: Token, parameters: Vec<Identifier>, body: BlockStatement) -> Self {
+        Self {
+            token,
+            parameters,
+            body,
+        }
+    }
+}
 
 impl Node for FunctionLiteral {
     fn token_literal(&self) -> String {

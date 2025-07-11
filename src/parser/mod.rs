@@ -3,8 +3,8 @@ mod tests;
 use std::collections::HashMap;
 
 use crate::ast::{
-    BlockStatement, BooleanLiteral, Expression, ExpressionStatement, IfExpression, InfixExpression,
-    IntegerLiteral, PrefixExpression, ReturnStatement,
+    BlockStatement, BooleanLiteral, Expression, ExpressionStatement, FunctionLiteral, IfExpression,
+    InfixExpression, IntegerLiteral, PrefixExpression, ReturnStatement,
 };
 
 type PrefixParseFn = fn(&mut Parser) -> Option<Box<dyn Expression>>;
@@ -42,6 +42,7 @@ impl Parser {
         parser.next_token();
         parser.next_token();
 
+        // Register the prefix functions
         parser.register_prefix_function(TokenType::Ident, |parser| parser.parse_identifier());
         parser.register_prefix_function(TokenType::Int, |parser| parser.parse_integer_literal());
         parser.register_prefix_function(TokenType::True, |parser| parser.parse_boolean_literal());
@@ -53,7 +54,11 @@ impl Parser {
             parser.parse_grouped_expression()
         });
         parser.register_prefix_function(TokenType::If, |parser| parser.parse_if_expression());
+        parser.register_prefix_function(TokenType::Function, |parser| {
+            parser.parse_function_literal()
+        });
 
+        // Register the infix functions
         parser.register_infix_function(TokenType::Eq, |parser, left| {
             parser.parse_infix_expression(left)
         });
@@ -113,8 +118,8 @@ impl Parser {
         }
     }
 
-    // When this function is called, self.cur_token should be pointing to a
-    // token with type TokenType::LBrace
+    // When this function is called, cur_token should be pointing to the LBrace
+    // When this function returns, cur_token should be pointing to the RBrace
     fn parse_block_statement(&mut self) -> Option<BlockStatement> {
         let token = if self.cur_token.token_type == TokenType::LBrace {
             self.cur_token.clone()
@@ -133,8 +138,7 @@ impl Parser {
         Some(BlockStatement::new(token, statements))
     }
 
-    // When this function is called, self.cur_token should be pointing to a
-    // token with type TokenType::Let
+    // When this function is called, cur_token should be pointing to the Let
     fn parse_let_statement(&mut self) -> Option<Box<dyn Statement>> {
         // This check is technically not needed since if we enter this function,
         // the current token should have TokenType::Let.
@@ -148,11 +152,13 @@ impl Parser {
         let name = if self.expect_peek(TokenType::Ident) {
             Identifier::new(self.cur_token.clone(), &self.cur_token.literal)
         } else {
+            self.expect_error(TokenType::Ident);
             return None;
         };
         // We expect an Assign token after the Identifier token. If present,
         // then consume it and advance the token pointers. Otherwise, return early.
         if !self.expect_peek(TokenType::Assign) {
+            self.expect_error(TokenType::Assign);
             return None;
         }
         // Advance token to start of expression
@@ -320,14 +326,17 @@ impl Parser {
             return None;
         };
         if !self.expect_peek(TokenType::LParen) {
+            self.expect_error(TokenType::LParen);
             return None;
         }
         self.next_token();
         let condition = self.parse_expression(Precedence::Lowest as i32)?;
         if !self.expect_peek(TokenType::RParen) {
+            self.expect_error(TokenType::RParen);
             return None;
         }
         if !self.expect_peek(TokenType::LBrace) {
+            self.expect_error(TokenType::LBrace);
             return None;
         }
         let consequence = self.parse_block_statement()?;
@@ -336,6 +345,7 @@ impl Parser {
 
         if self.cur_token.token_type == TokenType::Else {
             if !self.expect_peek(TokenType::LBrace) {
+                self.expect_error(TokenType::LBrace);
                 return None;
             }
             let alternative = self.parse_block_statement()?;
@@ -353,6 +363,52 @@ impl Parser {
                 None,
             )))
         }
+    }
+
+    fn parse_function_literal(&mut self) -> Option<Box<dyn Expression>> {
+        let token = if self.cur_token.token_type == TokenType::Function {
+            self.cur_token.clone()
+        } else {
+            return None;
+        };
+        if !self.expect_peek(TokenType::LParen) {
+            self.expect_error(TokenType::LParen);
+            return None;
+        }
+        // cur_token now points to the LParen
+        let parameters = self.parse_parameters()?;
+
+        if !self.expect_peek(TokenType::LBrace) {
+            self.expect_error(TokenType::LBrace);
+            return None;
+        }
+        // cur_token now points to the LBrace
+        let body = self.parse_block_statement()?;
+
+        Some(Box::new(FunctionLiteral::new(token, parameters, body)))
+    }
+
+    fn parse_parameters(&mut self) -> Option<Vec<Identifier>> {
+        // cur_token points to the LParen here
+        let mut ret = Vec::new();
+        self.next_token();
+        loop {
+            let identifier = Identifier::new(self.cur_token.clone(), &self.cur_token.literal);
+            ret.push(identifier);
+            // If the next token is RParen, then break out of the loop
+            if self.expect_peek(TokenType::RParen) {
+                break;
+            }
+            // Otherwise we expect a comma after the identifier. If there isn't a comma, then add a parser
+            // error and break out of the loop
+            if !self.expect_peek(TokenType::Comma) {
+                self.expect_error(TokenType::Comma);
+                return None;
+            }
+            self.next_token();
+        }
+        // cur_token points to the RParen here
+        Some(ret)
     }
 
     fn no_prefix_function_error(&mut self, token_type: TokenType) {
@@ -387,7 +443,6 @@ impl Parser {
             self.next_token();
             true
         } else {
-            self.expect_error(expected_token_type);
             false
         }
     }

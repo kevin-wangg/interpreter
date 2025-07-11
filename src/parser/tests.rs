@@ -1,15 +1,12 @@
 #[cfg(test)]
-use crate::ast::InfixExpression;
-#[cfg(test)]
-use crate::ast::{BooleanLiteral, IfExpression, IntegerLiteral, PrefixExpression};
-#[cfg(test)]
-use crate::ast::{ExpressionStatement, Identifier, LetStatement, Node, ReturnStatement};
+use crate::ast::{
+    BooleanLiteral, ExpressionStatement, FunctionLiteral, Identifier, IfExpression,
+    InfixExpression, IntegerLiteral, LetStatement, Node, PrefixExpression, ReturnStatement,
+};
 #[cfg(test)]
 use crate::lexer::Lexer;
 #[cfg(test)]
-use crate::parser::Parser;
-#[cfg(test)]
-use crate::parser::check_parser_errors;
+use crate::parser::{Parser, check_parser_errors};
 #[cfg(test)]
 use crate::token::TokenType;
 
@@ -147,9 +144,34 @@ fn test_if_else_expression() {
         assert_eq!(if_expression.condition.string(), "(x < y)");
         assert_eq!(if_expression.consequence.string(), "{ return x; }");
         assert!(if_expression.alternative.is_some());
-        assert_eq!(if_expression.alternative.as_ref().unwrap().string(), "{ return y; }");
+        assert_eq!(
+            if_expression.alternative.as_ref().unwrap().string(),
+            "{ return y; }"
+        );
     } else {
         assert!(false, "Failed to parse program");
+    }
+}
+
+#[test]
+fn test_function_literal_expression() {
+    let input = "fun(a, b) { return a + b; };";
+    let lexer = Lexer::new(input);
+    let mut parser = Parser::new(lexer);
+    if let Some(program) = parser.parse_program() {
+        check_parser_errors(&parser);
+        assert!(program.statements.len() == 1);
+        let statement = &program.statements[0];
+        let expression_statement = statement
+            .as_any()
+            .downcast_ref::<ExpressionStatement>()
+            .expect("Expected expression statement");
+        let function_literal = expression_statement
+            .expression
+            .as_any()
+            .downcast_ref::<FunctionLiteral>()
+            .expect("Expected function literal");
+        check_params_list(&function_literal.parameters, vec!["a", "b"]);
     }
 }
 
@@ -404,6 +426,14 @@ fn check_let_statement(
     let_statement.token.token_type == TokenType::Let
         && let_statement.name.value == expected_identifier_literal
         && let_statement.value.string() == expected_expression_literal
+}
+
+#[cfg(test)]
+fn check_params_list(parameters: &Vec<Identifier>, expected: Vec<&str>) {
+    assert_eq!(parameters.len(), expected.len());
+    for (i, param) in parameters.iter().enumerate() {
+        assert_eq!(param.value, expected[i]);
+    }
 }
 
 #[cfg(test)]

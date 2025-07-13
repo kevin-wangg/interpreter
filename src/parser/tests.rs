@@ -1,6 +1,6 @@
 #[cfg(test)]
 use crate::ast::{
-    BooleanLiteral, ExpressionStatement, FunctionLiteral, Identifier, IfExpression,
+    BooleanLiteral, CallExpression, ExpressionStatement, FunctionLiteral, Identifier, IfExpression,
     InfixExpression, IntegerLiteral, LetStatement, Node, PrefixExpression, ReturnStatement,
 };
 #[cfg(test)]
@@ -414,6 +414,38 @@ fn test_operator_precedence() {
         } else {
             assert!(false, "Failed to parse program for input: {}", input);
         }
+    }
+}
+
+#[test]
+fn test_call_expression() {
+    let input = "add(1, 2 * 3, 4 + 5);";
+    let lexer = Lexer::new(input);
+    let mut parser = Parser::new(lexer);
+
+    if let Some(program) = parser.parse_program() {
+        check_parser_errors(&parser);
+        assert!(program.statements.len() == 1);
+
+        let statement = &program.statements[0];
+        let expression_statement = statement
+            .as_any()
+            .downcast_ref::<ExpressionStatement>()
+            .expect("Expected expression statement");
+
+        let call_expression = expression_statement
+            .expression
+            .as_any()
+            .downcast_ref::<CallExpression>()
+            .expect("Expected call expression");
+
+        assert_eq!(call_expression.function.string(), "add");
+        assert_eq!(call_expression.arguments.len(), 3);
+        assert_eq!(call_expression.arguments[0].string(), "1");
+        assert_eq!(call_expression.arguments[1].string(), "(2 * 3)");
+        assert_eq!(call_expression.arguments[2].string(), "(4 + 5)");
+    } else {
+        assert!(false, "Failed to parse program");
     }
 }
 

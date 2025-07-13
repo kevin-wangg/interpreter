@@ -441,3 +441,46 @@ impl Node for FunctionLiteral {
 impl Expression for FunctionLiteral {}
 
 // ========== Function literal End ==========
+
+// ========== Call expression Start ==========
+
+pub struct CallExpression {
+    pub token: Token,                  // The ( token
+    pub function: Box<dyn Expression>, // Even though the type allows for any Expression here, in practice this should only be an identifier or a function literal
+    pub arguments: Vec<Box<dyn Expression>>,
+}
+
+impl CallExpression {
+    pub fn new(token: Token, function: Box<dyn Expression>, arguments: Vec<Box<dyn Expression>>) -> Self {
+        Self {
+            token,
+            function,
+            arguments,
+        }
+    }
+}
+
+impl Node for CallExpression {
+    fn token_literal(&self) -> String {
+        self.token.literal.clone()
+    }
+
+    fn as_any(&self) -> &dyn Any {
+        self
+    }
+
+    fn string(&self) -> String {
+        let function = self.function.string();
+        let arguments = self
+            .arguments
+            .iter()
+            .map(|arg| arg.string())
+            .collect::<Vec<String>>()
+            .join(",");
+        format!("{function}({arguments})")
+    }
+}
+
+impl Expression for CallExpression {}
+
+// ========== Call expression End ==========

@@ -3,8 +3,7 @@ mod tests;
 use std::collections::HashMap;
 
 use crate::ast::{
-    BlockStatement, BooleanLiteral, Expression, ExpressionStatement, FunctionLiteral, IfExpression,
-    InfixExpression, IntegerLiteral, PrefixExpression, ReturnStatement,
+    BlockStatement, BooleanLiteral, CallExpression, Expression, ExpressionStatement, FunctionLiteral, IfExpression, InfixExpression, IntegerLiteral, PrefixExpression, ReturnStatement
 };
 
 type PrefixParseFn = fn(&mut Parser) -> Option<Box<dyn Expression>>;
@@ -88,6 +87,9 @@ impl Parser {
         });
         parser.register_infix_function(TokenType::Slash, |parser, left| {
             parser.parse_infix_expression(left)
+        });
+        parser.register_infix_function(TokenType::LParen, |parser, left| {
+            parser.parse_call_expression(left)
         });
         parser
     }
@@ -221,8 +223,8 @@ impl Parser {
 
     /// Parses an expression and returns an AST node representing that expression.
     /// This function consumes tokens up to and including the last token in the expression.
-    /// Namely, it does NOT consume the semicolon following an expression.
-    fn parse_expression(&mut self, precendence: i32) -> Option<Box<dyn Expression>> {
+    /// Namely, it does NOT consume the semicolon (or comma) following an expression.
+    fn parse_expression(&mut self, precedence: i32) -> Option<Box<dyn Expression>> {
         let prefix_function =
             if let Some(f) = self.prefix_parse_functions.get(&self.cur_token.token_type) {
                 f
@@ -232,12 +234,12 @@ impl Parser {
             };
         let mut left = prefix_function(self)?;
         loop {
-            if self.peek_token.token_type == TokenType::Semicolon {
+            if self.peek_token.token_type == TokenType::Semicolon || self.peek_token.token_type == TokenType::Comma {
                 break;
             } else {
                 let next_precedence =
                     Parser::token_to_precedence(self.peek_token.token_type) as i32;
-                if precendence < next_precedence {
+                if next_precedence > precedence {
                     let infix_function = if let Some(f) =
                         self.infix_parse_functions.get(&self.peek_token.token_type)
                     {
@@ -303,6 +305,21 @@ impl Parser {
         Some(Box::new(InfixExpression::new(
             token, &operator, left, right,
         )))
+    }
+
+    fn parse_call_expression(&mut self, left: Box<dyn Expression>) -> Option<Box<dyn Expression>> {
+        if !(left.as_any().is::<Identifier>() || left.as_any().is::<FunctionLiteral>()) {
+            self.errors
+                .push("Expected function literal or identifier in call position".to_string());
+            return None;
+        }
+        let token = if self.cur_token.token_type == TokenType::LParen {
+            self.cur_token.clone()
+        } else {
+            return None;
+        };
+        let arguments = self.parse_argument_list()?;
+        Some(Box::new(CallExpression::new(token, left, arguments)))
     }
 
     fn parse_grouped_expression(&mut self) -> Option<Box<dyn Expression>> {
@@ -376,7 +393,7 @@ impl Parser {
             return None;
         }
         // cur_token now points to the LParen
-        let parameters = self.parse_parameters()?;
+        let parameters = self.parse_parameter_list()?;
 
         if !self.expect_peek(TokenType::LBrace) {
             self.expect_error(TokenType::LBrace);
@@ -388,7 +405,30 @@ impl Parser {
         Some(Box::new(FunctionLiteral::new(token, parameters, body)))
     }
 
-    fn parse_parameters(&mut self) -> Option<Vec<Identifier>> {
+    fn parse_argument_list(&mut self) -> Option<Vec<Box<dyn Expression>>> {
+        // cur_token points to the LParen here
+        let mut ret = Vec::new();
+        self.next_token();
+        loop {
+            let argument = self.parse_expression(Precedence::Lowest as i32)?;
+            ret.push(argument);
+            // If the next token is RParen, then break out of the loop
+            if self.expect_peek(TokenType::RParen) {
+                break;
+            }
+            // Otherwise we expect a comma after the identifier. If there is isn't, then add a Parser error
+            // and break out of the loop
+            if !self.expect_peek(TokenType::Comma) {
+                self.expect_error(TokenType::Comma);
+                return None;
+            }
+            self.next_token();
+        }
+        // cur_token points to the RParen here
+        Some(ret)
+    }
+
+    fn parse_parameter_list(&mut self) -> Option<Vec<Identifier>> {
         // cur_token points to the LParen here
         let mut ret = Vec::new();
         self.next_token();

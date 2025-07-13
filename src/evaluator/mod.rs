@@ -1,5 +1,5 @@
-use crate::ast::{ExpressionStatement, IntegerLiteral, Node, Program};
-use crate::object::{Integer, Object};
+use crate::ast::{BooleanLiteral, ExpressionStatement, IntegerLiteral, Node, Program};
+use crate::object::{Boolean, Integer, Object};
 
 mod tests;
 
@@ -22,7 +22,10 @@ impl Evaluator {
         Self {}
     }
 
-    pub fn eval<T: Node + ?Sized>(&mut self, node: &Box<T>) -> Result<Box<dyn Object>, EvaluatorError> {
+    pub fn eval<T: Node + ?Sized>(
+        &mut self,
+        node: &Box<T>,
+    ) -> Result<Box<dyn Object>, EvaluatorError> {
         if let Some(program) = node.as_any().downcast_ref::<Program>() {
             let mut ret: Box<dyn Object> = Box::new(Integer::new(69));
             for statement in &program.statements {
@@ -33,6 +36,8 @@ impl Evaluator {
             self.eval(&statement.expression)
         } else if let Some(integer_literal) = node.as_any().downcast_ref::<IntegerLiteral>() {
             Ok(Box::new(Integer::new(integer_literal.value)))
+        } else if let Some(boolean_literal) = node.as_any().downcast_ref::<BooleanLiteral>() {
+            Ok(Box::new(Boolean::new(boolean_literal.value)))
         } else {
             Err(EvaluatorError::new(
                 "Evaluator encountered unknown AST type",

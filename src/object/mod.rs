@@ -45,6 +45,14 @@ impl Object for Boolean {
     }
 }
 
+impl Boolean {
+    pub fn new(value: bool) -> Self {
+        Self {
+            value
+        }
+    }
+}
+
 pub struct Null {}
 
 impl Object for Null {

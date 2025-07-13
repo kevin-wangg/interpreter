@@ -28,7 +28,7 @@ fn main() {
                         println!("{}", statement.string());
                     }
                 } else {
-                    assert!(false, "Failed to parser program");
+                    assert!(false, "Failed to parse program");
                 }
             }
             Err(error) => {

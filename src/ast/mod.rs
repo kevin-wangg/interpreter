@@ -476,7 +476,7 @@ impl Node for CallExpression {
             .iter()
             .map(|arg| arg.string())
             .collect::<Vec<String>>()
-            .join(",");
+            .join(", ");
         format!("{function}({arguments})")
     }
 }

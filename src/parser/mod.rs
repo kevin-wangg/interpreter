@@ -94,9 +94,8 @@ impl Parser {
         parser
     }
 
-    pub fn parse_program(&mut self) -> Option<Program> {
+    pub fn parse_program(&mut self) -> Program {
         let mut program = Program::new(Vec::new());
-
         while self.cur_token.token_type != TokenType::Eof {
             if let Some(statement) = self.parse_statement() {
                 program.statements.push(statement);
@@ -105,8 +104,7 @@ impl Parser {
                 self.skip_to_statement_end();
             }
         }
-
-        Some(program)
+        program
     }
 
     // This function should leave the parser in a state where cur_token points to the first token
@@ -535,13 +533,16 @@ impl Parser {
     }
 }
 
-pub fn check_parser_errors(parser: &Parser) {
+pub fn has_parser_errors(parser: &Parser) -> bool {
     let errors = parser.get_errors();
     if !errors.is_empty() {
+        eprintln!("Parser has {} errors(s)", errors.len());
         for error in errors {
             eprintln!("Parser error: {}", error);
         }
-        assert!(false, "Parser has {} error(s)", errors.len());
+        true
+    } else {
+        false
     }
 }
 

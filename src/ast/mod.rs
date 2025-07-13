@@ -27,6 +27,24 @@ impl Program {
     }
 }
 
+impl Node for Program {
+    fn token_literal(&self) -> String {
+        "Program".to_string()
+    }
+
+    fn as_any(&self) -> &dyn Any {
+        self
+    }
+
+    fn string(&self) -> String {
+        let mut ret = Vec::new();
+        for statements in &self.statements {
+            ret.push(statements.string());
+        }
+        ret.join("\n")
+    }
+}
+
 // ========== Identifier Start ==========
 
 pub struct Identifier {

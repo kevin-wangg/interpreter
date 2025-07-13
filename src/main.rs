@@ -1,12 +1,15 @@
 mod ast;
+mod evaluator;
 mod lexer;
+mod object;
 mod parser;
 mod token;
 
 use std::io;
 
+use evaluator::Evaluator;
 use lexer::Lexer;
-use parser::{Parser, check_parser_errors};
+use parser::{Parser, has_parser_errors};
 
 fn main() {
     println!("Welcome to the Monkey programming language!");
@@ -22,13 +25,22 @@ fn main() {
             Ok(_) => {
                 let lexer = Lexer::new(&input_string);
                 let mut parser = Parser::new(lexer);
-                if let Some(program) = parser.parse_program() {
-                    check_parser_errors(&parser);
-                    for statement in program.statements {
+                let program = parser.parse_program();
+                if !has_parser_errors(&parser) {
+                    println!("Printing AST...");
+                    for statement in &program.statements {
                         println!("{}", statement.string());
                     }
-                } else {
-                    assert!(false, "Failed to parse program");
+                    let mut evaluator = Evaluator::new();
+                    match evaluator.eval(&Box::new(program)) {
+                        Ok(value) => {
+                            println!("Evaluated value:");
+                            println!("{}", value.inspect());
+                        }
+                        Err(e) => {
+                            println!("Error evaluating program: {}", e.error_message)
+                        }
+                    }
                 }
             }
             Err(error) => {

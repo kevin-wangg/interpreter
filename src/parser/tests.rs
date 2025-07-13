@@ -6,12 +6,12 @@ use crate::ast::{
 #[cfg(test)]
 use crate::lexer::Lexer;
 #[cfg(test)]
-use crate::parser::{Parser, check_parser_errors};
+use crate::parser::{Parser, has_parser_errors};
 #[cfg(test)]
 use crate::token::TokenType;
 
 #[test]
-fn test_let_statements() {
+fn let_statements() {
     let input = "
         let x = 5;
         let y = 10;
@@ -23,29 +23,26 @@ fn test_let_statements() {
 
     let expected_identifier_literals = vec!["x", "y", "foobar"];
     let expected_values = vec!["5", "10", "82388"];
-    if let Some(program) = parser.parse_program() {
-        check_parser_errors(&parser);
-        assert!(program.statements.len() == 3);
-        for i in 0..program.statements.len() {
-            let statement = &program.statements[i];
-            let let_statement = statement
-                .as_any()
-                .downcast_ref::<LetStatement>()
-                .expect("Expected let statement");
+    let program = parser.parse_program();
+    assert!(!has_parser_errors(&parser));
+    assert!(program.statements.len() == 3);
+    for i in 0..program.statements.len() {
+        let statement = &program.statements[i];
+        let let_statement = statement
+            .as_any()
+            .downcast_ref::<LetStatement>()
+            .expect("Expected let statement");
 
-            assert!(check_let_statement(
-                let_statement,
-                expected_identifier_literals[i],
-                expected_values[i]
-            ))
-        }
-    } else {
-        assert!(false, "Failed to parse program")
+        assert!(check_let_statement(
+            let_statement,
+            expected_identifier_literals[i],
+            expected_values[i]
+        ))
     }
 }
 
 #[test]
-fn test_return_statements() {
+fn return_statements() {
     let input = "
         return 10;
         return foo;
@@ -53,26 +50,23 @@ fn test_return_statements() {
     let expected_values = vec!["10", "foo"];
     let lexer = Lexer::new(input);
     let mut parser = Parser::new(lexer);
-    if let Some(program) = parser.parse_program() {
-        check_parser_errors(&parser);
-        assert!(program.statements.len() == 2);
-        for i in 0..program.statements.len() {
-            let statement = &program.statements[i];
-            let return_statement = statement
-                .as_any()
-                .downcast_ref::<ReturnStatement>()
-                .expect("Expected return statement");
-            assert!(check_return_statement(return_statement, expected_values[i]))
-        }
-    } else {
-        assert!(false, "Failed to parse program")
+    let program = parser.parse_program();
+    assert!(!has_parser_errors(&parser));
+    assert!(program.statements.len() == 2);
+    for i in 0..program.statements.len() {
+        let statement = &program.statements[i];
+        let return_statement = statement
+            .as_any()
+            .downcast_ref::<ReturnStatement>()
+            .expect("Expected return statement");
+        assert!(check_return_statement(return_statement, expected_values[i]))
     }
 }
 
 // Not really a complete test since it doesn't call `parse_program`, but still included
 // to make sure block statement parsing works.
 #[test]
-fn test_block_statement() {
+fn block_statement() {
     let input = "{ let a = 10; a + b; return 10; }";
     let lexer = Lexer::new(input);
     let mut parser = Parser::new(lexer);
@@ -86,7 +80,7 @@ fn test_block_statement() {
 }
 
 #[test]
-fn test_if_expression() {
+fn if_expression() {
     let input = "if (x < y) { return x; }";
     let lexer = Lexer::new(input);
     let mut parser = Parser::new(lexer);
@@ -95,242 +89,220 @@ fn test_if_expression() {
         println!();
     }
 
-    if let Some(program) = parser.parse_program() {
-        check_parser_errors(&parser);
-        assert!(program.statements.len() == 1);
+    let program = parser.parse_program();
+    assert!(!has_parser_errors(&parser));
+    assert!(program.statements.len() == 1);
 
-        let statement = &program.statements[0];
-        let expression_statement = statement
-            .as_any()
-            .downcast_ref::<ExpressionStatement>()
-            .expect("Expected expression statement");
+    let statement = &program.statements[0];
+    let expression_statement = statement
+        .as_any()
+        .downcast_ref::<ExpressionStatement>()
+        .expect("Expected expression statement");
 
-        let if_expression = expression_statement
-            .expression
-            .as_any()
-            .downcast_ref::<IfExpression>()
-            .expect("Expected if expression");
+    let if_expression = expression_statement
+        .expression
+        .as_any()
+        .downcast_ref::<IfExpression>()
+        .expect("Expected if expression");
 
-        assert_eq!(if_expression.condition.string(), "(x < y)");
-        assert_eq!(if_expression.consequence.string(), "{ return x; }");
-        assert!(if_expression.alternative.is_none());
-    } else {
-        assert!(false, "Failed to parse program");
-    }
+    assert_eq!(if_expression.condition.string(), "(x < y)");
+    assert_eq!(if_expression.consequence.string(), "{ return x; }");
+    assert!(if_expression.alternative.is_none());
 }
 
 #[test]
-fn test_if_else_expression() {
+fn if_else_expression() {
     let input = "if (x < y) { return x; } else { return y; }";
     let lexer = Lexer::new(input);
     let mut parser = Parser::new(lexer);
 
-    if let Some(program) = parser.parse_program() {
-        check_parser_errors(&parser);
-        assert!(program.statements.len() == 1);
+    let program = parser.parse_program();
+    assert!(!has_parser_errors(&parser));
+    assert!(program.statements.len() == 1);
 
-        let statement = &program.statements[0];
-        let expression_statement = statement
-            .as_any()
-            .downcast_ref::<ExpressionStatement>()
-            .expect("Expected expression statement");
+    let statement = &program.statements[0];
+    let expression_statement = statement
+        .as_any()
+        .downcast_ref::<ExpressionStatement>()
+        .expect("Expected expression statement");
 
-        let if_expression = expression_statement
-            .expression
-            .as_any()
-            .downcast_ref::<IfExpression>()
-            .expect("Expected if expression");
+    let if_expression = expression_statement
+        .expression
+        .as_any()
+        .downcast_ref::<IfExpression>()
+        .expect("Expected if expression");
 
-        assert_eq!(if_expression.condition.string(), "(x < y)");
-        assert_eq!(if_expression.consequence.string(), "{ return x; }");
-        assert!(if_expression.alternative.is_some());
-        assert_eq!(
-            if_expression.alternative.as_ref().unwrap().string(),
-            "{ return y; }"
-        );
-    } else {
-        assert!(false, "Failed to parse program");
-    }
+    assert_eq!(if_expression.condition.string(), "(x < y)");
+    assert_eq!(if_expression.consequence.string(), "{ return x; }");
+    assert!(if_expression.alternative.is_some());
+    assert_eq!(
+        if_expression.alternative.as_ref().unwrap().string(),
+        "{ return y; }"
+    );
 }
 
 #[test]
-fn test_function_literal_expression() {
+fn function_literal_expression() {
     let input = "fun(a, b) { return a + b; };";
     let lexer = Lexer::new(input);
     let mut parser = Parser::new(lexer);
-    if let Some(program) = parser.parse_program() {
-        check_parser_errors(&parser);
-        assert!(program.statements.len() == 1);
-        let statement = &program.statements[0];
-        let expression_statement = statement
-            .as_any()
-            .downcast_ref::<ExpressionStatement>()
-            .expect("Expected expression statement");
-        let function_literal = expression_statement
-            .expression
-            .as_any()
-            .downcast_ref::<FunctionLiteral>()
-            .expect("Expected function literal");
-        check_params_list(&function_literal.parameters, vec!["a", "b"]);
-    }
+    let program = parser.parse_program();
+    assert!(!has_parser_errors(&parser));
+    assert!(program.statements.len() == 1);
+    let statement = &program.statements[0];
+    let expression_statement = statement
+        .as_any()
+        .downcast_ref::<ExpressionStatement>()
+        .expect("Expected expression statement");
+    let function_literal = expression_statement
+        .expression
+        .as_any()
+        .downcast_ref::<FunctionLiteral>()
+        .expect("Expected function literal");
+    check_params_list(&function_literal.parameters, vec!["a", "b"]);
 }
 
 #[test]
-fn test_identifier_expression() {
+fn identifier_expression() {
     let input = "foobar;";
     let lexer = Lexer::new(input);
     let mut parser = Parser::new(lexer);
-    if let Some(program) = parser.parse_program() {
-        check_parser_errors(&parser);
-        assert!(program.statements.len() == 1);
+    let program = parser.parse_program();
+    assert!(!has_parser_errors(&parser));
+    assert!(program.statements.len() == 1);
 
-        let statement = &program.statements[0];
-        let expression_statement = statement
-            .as_any()
-            .downcast_ref::<ExpressionStatement>()
-            .expect("Expected expression statement");
+    let statement = &program.statements[0];
+    let expression_statement = statement
+        .as_any()
+        .downcast_ref::<ExpressionStatement>()
+        .expect("Expected expression statement");
 
-        let identifier = expression_statement
-            .expression
-            .as_any()
-            .downcast_ref::<Identifier>()
-            .expect("Expected identifier expression");
+    let identifier = expression_statement
+        .expression
+        .as_any()
+        .downcast_ref::<Identifier>()
+        .expect("Expected identifier expression");
 
-        assert_eq!(identifier.value, "foobar");
-        assert_eq!(identifier.token_literal(), "foobar");
-    } else {
-        assert!(false, "Failed to parse program");
-    }
+    assert_eq!(identifier.value, "foobar");
+    assert_eq!(identifier.token_literal(), "foobar");
 }
 
 #[test]
-fn test_integer_literal_expression() {
+fn integer_literal_expression() {
     let input = "10;";
     let lexer = Lexer::new(input);
     let mut parser = Parser::new(lexer);
-    if let Some(program) = parser.parse_program() {
-        check_parser_errors(&parser);
-        assert!(program.statements.len() == 1);
-        let statement = &program.statements[0];
-        let expression_statement = statement
-            .as_any()
-            .downcast_ref::<ExpressionStatement>()
-            .expect("Expected expression statement");
-        let integer_literal = expression_statement
-            .expression
-            .as_any()
-            .downcast_ref::<IntegerLiteral>()
-            .expect("Expected integer literal expression");
-        assert_eq!(integer_literal.value, 10);
-        assert_eq!(integer_literal.token_literal(), "10");
-    } else {
-        assert!(false, "Failed to parse program");
-    }
+    let program = parser.parse_program();
+    assert!(!has_parser_errors(&parser));
+    assert!(program.statements.len() == 1);
+    let statement = &program.statements[0];
+    let expression_statement = statement
+        .as_any()
+        .downcast_ref::<ExpressionStatement>()
+        .expect("Expected expression statement");
+    let integer_literal = expression_statement
+        .expression
+        .as_any()
+        .downcast_ref::<IntegerLiteral>()
+        .expect("Expected integer literal expression");
+    assert_eq!(integer_literal.value, 10);
+    assert_eq!(integer_literal.token_literal(), "10");
 }
 
 #[test]
-fn test_boolean_literal_expression() {
+fn boolean_literal_expression() {
     let input = "false;";
     let lexer = Lexer::new(input);
     let mut parser = Parser::new(lexer);
-    if let Some(program) = parser.parse_program() {
-        check_parser_errors(&parser);
-        assert!(program.statements.len() == 1);
-        let statement = &program.statements[0];
-        let expression_statement = statement
-            .as_any()
-            .downcast_ref::<ExpressionStatement>()
-            .expect("Expected expression statement");
-        let integer_literal = expression_statement
-            .expression
-            .as_any()
-            .downcast_ref::<BooleanLiteral>()
-            .expect("Expected boolean literal expression");
-        assert_eq!(integer_literal.value, false);
-        assert_eq!(integer_literal.token_literal(), "false");
-    } else {
-        assert!(false, "Failed to parse program");
-    }
+    let program = parser.parse_program();
+    assert!(!has_parser_errors(&parser));
+    assert!(program.statements.len() == 1);
+    let statement = &program.statements[0];
+    let expression_statement = statement
+        .as_any()
+        .downcast_ref::<ExpressionStatement>()
+        .expect("Expected expression statement");
+    let integer_literal = expression_statement
+        .expression
+        .as_any()
+        .downcast_ref::<BooleanLiteral>()
+        .expect("Expected boolean literal expression");
+    assert_eq!(integer_literal.value, false);
+    assert_eq!(integer_literal.token_literal(), "false");
 }
 
 #[test]
-fn test_bang_expression() {
+fn bang_expression() {
     let input = "!true;";
     let lexer = Lexer::new(input);
     let mut parser = Parser::new(lexer);
 
-    if let Some(program) = parser.parse_program() {
-        check_parser_errors(&parser);
-        assert!(program.statements.len() == 1);
+    let program = parser.parse_program();
+    assert!(!has_parser_errors(&parser));
+    assert!(program.statements.len() == 1);
 
-        let statement = &program.statements[0];
-        let expression_statement = statement
-            .as_any()
-            .downcast_ref::<ExpressionStatement>()
-            .expect("Expected expression statement");
+    let statement = &program.statements[0];
+    let expression_statement = statement
+        .as_any()
+        .downcast_ref::<ExpressionStatement>()
+        .expect("Expected expression statement");
 
-        let prefix_expression = expression_statement
-            .expression
-            .as_any()
-            .downcast_ref::<PrefixExpression>()
-            .expect("Expected prefix expression");
+    let prefix_expression = expression_statement
+        .expression
+        .as_any()
+        .downcast_ref::<PrefixExpression>()
+        .expect("Expected prefix expression");
 
-        assert_eq!(prefix_expression.operator, "!");
-        assert_eq!(prefix_expression.token_literal(), "!");
+    assert_eq!(prefix_expression.operator, "!");
+    assert_eq!(prefix_expression.token_literal(), "!");
 
-        let right_operand = prefix_expression
-            .right
-            .as_any()
-            .downcast_ref::<BooleanLiteral>()
-            .expect("Expected boolean literal as right operand");
+    let right_operand = prefix_expression
+        .right
+        .as_any()
+        .downcast_ref::<BooleanLiteral>()
+        .expect("Expected boolean literal as right operand");
 
-        assert_eq!(right_operand.value, true);
-        assert_eq!(right_operand.token_literal(), "true");
-    } else {
-        assert!(false, "Failed to parse program");
-    }
+    assert_eq!(right_operand.value, true);
+    assert_eq!(right_operand.token_literal(), "true");
 }
 
 #[test]
-fn test_minus_expression() {
+fn minus_expression() {
     let input = "-42;";
     let lexer = Lexer::new(input);
     let mut parser = Parser::new(lexer);
 
-    if let Some(program) = parser.parse_program() {
-        check_parser_errors(&parser);
-        assert!(program.statements.len() == 1);
+    let program = parser.parse_program();
+    assert!(!has_parser_errors(&parser));
+    assert!(program.statements.len() == 1);
 
-        let statement = &program.statements[0];
-        let expression_statement = statement
-            .as_any()
-            .downcast_ref::<ExpressionStatement>()
-            .expect("Expected expression statement");
+    let statement = &program.statements[0];
+    let expression_statement = statement
+        .as_any()
+        .downcast_ref::<ExpressionStatement>()
+        .expect("Expected expression statement");
 
-        let prefix_expression = expression_statement
-            .expression
-            .as_any()
-            .downcast_ref::<PrefixExpression>()
-            .expect("Expected prefix expression");
+    let prefix_expression = expression_statement
+        .expression
+        .as_any()
+        .downcast_ref::<PrefixExpression>()
+        .expect("Expected prefix expression");
 
-        assert_eq!(prefix_expression.operator, "-");
-        assert_eq!(prefix_expression.token_literal(), "-");
+    assert_eq!(prefix_expression.operator, "-");
+    assert_eq!(prefix_expression.token_literal(), "-");
 
-        let right_operand = prefix_expression
-            .right
-            .as_any()
-            .downcast_ref::<IntegerLiteral>()
-            .expect("Expected integer literal as right operand");
+    let right_operand = prefix_expression
+        .right
+        .as_any()
+        .downcast_ref::<IntegerLiteral>()
+        .expect("Expected integer literal as right operand");
 
-        assert_eq!(right_operand.value, 42);
-        assert_eq!(right_operand.token_literal(), "42");
-    } else {
-        assert!(false, "Failed to parse program");
-    }
+    assert_eq!(right_operand.value, 42);
+    assert_eq!(right_operand.token_literal(), "42");
 }
 
 #[test]
-fn test_infix_expressions() {
+fn infix_expressions() {
     let tests = vec![
         vec!["5 + 5;", "5", "+", "5"],
         vec!["5 - 5;", "5", "-", "5"],
@@ -350,30 +322,27 @@ fn test_infix_expressions() {
     for test in tests {
         let lexer = Lexer::new(test[0]);
         let mut parser = Parser::new(lexer);
-        if let Some(program) = parser.parse_program() {
-            check_parser_errors(&parser);
-            assert!(program.statements.len() == 1);
-            let statement = &program.statements[0];
-            let expression_statement = statement
-                .as_any()
-                .downcast_ref::<ExpressionStatement>()
-                .expect("Expected expression statement");
-            let infix_expression = expression_statement
-                .expression
-                .as_any()
-                .downcast_ref::<InfixExpression>()
-                .expect("Expected infix expression");
-            assert_eq!(infix_expression.left.string(), test[1]);
-            assert_eq!(infix_expression.operator, test[2]);
-            assert_eq!(infix_expression.right.string(), test[3]);
-        } else {
-            assert!(false, "Failed to parse program");
-        }
+        let program = parser.parse_program();
+        assert!(!has_parser_errors(&parser));
+        assert!(program.statements.len() == 1);
+        let statement = &program.statements[0];
+        let expression_statement = statement
+            .as_any()
+            .downcast_ref::<ExpressionStatement>()
+            .expect("Expected expression statement");
+        let infix_expression = expression_statement
+            .expression
+            .as_any()
+            .downcast_ref::<InfixExpression>()
+            .expect("Expected infix expression");
+        assert_eq!(infix_expression.left.string(), test[1]);
+        assert_eq!(infix_expression.operator, test[2]);
+        assert_eq!(infix_expression.right.string(), test[3]);
     }
 }
 
 #[test]
-fn test_operator_precedence() {
+fn operator_precedence() {
     let tests = vec![
         ("5 + 5 * 5;", "(5 + (5 * 5))"),
         ("5 * 5 + 5;", "((5 * 5) + 5)"),
@@ -411,52 +380,46 @@ fn test_operator_precedence() {
     for (input, expected) in tests {
         let lexer = Lexer::new(input);
         let mut parser = Parser::new(lexer);
-        if let Some(program) = parser.parse_program() {
-            check_parser_errors(&parser);
-            assert!(program.statements.len() == 1);
-            let statement = &program.statements[0];
-            let expression_statement = statement
-                .as_any()
-                .downcast_ref::<ExpressionStatement>()
-                .expect("Expected expression statement");
-            let actual = expression_statement.expression.string();
-            assert_eq!(actual, expected, "Input: {}", input);
-        } else {
-            assert!(false, "Failed to parse program for input: {}", input);
-        }
-    }
-}
-
-#[test]
-fn test_call_expression() {
-    let input = "add(1, 2 * 3, 4 + 5);";
-    let lexer = Lexer::new(input);
-    let mut parser = Parser::new(lexer);
-
-    if let Some(program) = parser.parse_program() {
-        check_parser_errors(&parser);
+        let program = parser.parse_program();
+        assert!(!has_parser_errors(&parser));
         assert!(program.statements.len() == 1);
-
         let statement = &program.statements[0];
         let expression_statement = statement
             .as_any()
             .downcast_ref::<ExpressionStatement>()
             .expect("Expected expression statement");
-
-        let call_expression = expression_statement
-            .expression
-            .as_any()
-            .downcast_ref::<CallExpression>()
-            .expect("Expected call expression");
-
-        assert_eq!(call_expression.function.string(), "add");
-        assert_eq!(call_expression.arguments.len(), 3);
-        assert_eq!(call_expression.arguments[0].string(), "1");
-        assert_eq!(call_expression.arguments[1].string(), "(2 * 3)");
-        assert_eq!(call_expression.arguments[2].string(), "(4 + 5)");
-    } else {
-        assert!(false, "Failed to parse program");
+        let actual = expression_statement.expression.string();
+        assert_eq!(actual, expected, "Input: {}", input);
     }
+}
+
+#[test]
+fn call_expression() {
+    let input = "add(1, 2 * 3, 4 + 5);";
+    let lexer = Lexer::new(input);
+    let mut parser = Parser::new(lexer);
+
+    let program = parser.parse_program();
+    assert!(!has_parser_errors(&parser));
+    assert!(program.statements.len() == 1);
+
+    let statement = &program.statements[0];
+    let expression_statement = statement
+        .as_any()
+        .downcast_ref::<ExpressionStatement>()
+        .expect("Expected expression statement");
+
+    let call_expression = expression_statement
+        .expression
+        .as_any()
+        .downcast_ref::<CallExpression>()
+        .expect("Expected call expression");
+
+    assert_eq!(call_expression.function.string(), "add");
+    assert_eq!(call_expression.arguments.len(), 3);
+    assert_eq!(call_expression.arguments[0].string(), "1");
+    assert_eq!(call_expression.arguments[1].string(), "(2 * 3)");
+    assert_eq!(call_expression.arguments[2].string(), "(4 + 5)");
 }
 
 #[cfg(test)]

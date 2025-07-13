@@ -29,6 +29,7 @@ pub enum TokenType {
     NotEq,
     GreaterEq,
     LessEq,
+    Null,
 }
 
 #[derive(Clone, Debug)]

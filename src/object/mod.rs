@@ -64,3 +64,9 @@ impl Object for Null {
         "null".to_string()
     }
 }
+
+impl Null {
+    pub fn new() -> Self {
+        Self {}
+    }
+}

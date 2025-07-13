@@ -238,6 +238,32 @@ impl Expression for BooleanLiteral {}
 
 // ========== Boolean literal End ==========
 
+pub struct NullLiteral {
+    pub token: Token,
+}
+
+impl NullLiteral {
+    pub fn new(token: Token) -> Self {
+        Self { token }
+    }
+}
+
+impl Node for NullLiteral {
+    fn token_literal(&self) -> String {
+        self.token.literal.clone()
+    }
+
+    fn as_any(&self) -> &dyn Any {
+        self
+    }
+
+    fn string(&self) -> String {
+        "null".to_string()
+    }
+}
+
+impl Expression for NullLiteral {}
+
 // ========== Prefix expression Start ==========
 
 pub struct PrefixExpression {
@@ -469,7 +495,11 @@ pub struct CallExpression {
 }
 
 impl CallExpression {
-    pub fn new(token: Token, function: Box<dyn Expression>, arguments: Vec<Box<dyn Expression>>) -> Self {
+    pub fn new(
+        token: Token,
+        function: Box<dyn Expression>,
+        arguments: Vec<Box<dyn Expression>>,
+    ) -> Self {
         Self {
             token,
             function,

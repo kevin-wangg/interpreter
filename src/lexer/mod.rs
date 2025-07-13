@@ -165,6 +165,7 @@ impl Lexer {
         keywords.insert("if", TokenType::If);
         keywords.insert("else", TokenType::Else);
         keywords.insert("return", TokenType::Return);
+        keywords.insert("null", TokenType::Null);
         *keywords.get(word).unwrap_or(&TokenType::Ident)
     }
 

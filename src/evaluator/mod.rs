@@ -1,5 +1,5 @@
-use crate::ast::{BooleanLiteral, ExpressionStatement, IntegerLiteral, Node, Program};
-use crate::object::{Boolean, Integer, Object};
+use crate::ast::{BooleanLiteral, ExpressionStatement, IntegerLiteral, Node, NullLiteral, Program};
+use crate::object::{Boolean, Integer, Null, Object};
 
 mod tests;
 
@@ -38,6 +38,8 @@ impl Evaluator {
             Ok(Box::new(Integer::new(integer_literal.value)))
         } else if let Some(boolean_literal) = node.as_any().downcast_ref::<BooleanLiteral>() {
             Ok(Box::new(Boolean::new(boolean_literal.value)))
+        } else if node.as_any().is::<NullLiteral>() {
+            Ok(Box::new(Null::new()))
         } else {
             Err(EvaluatorError::new(
                 "Evaluator encountered unknown AST type",

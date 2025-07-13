@@ -1,7 +1,7 @@
 #[cfg(test)]
 use crate::ast::{
     BooleanLiteral, CallExpression, ExpressionStatement, FunctionLiteral, Identifier, IfExpression,
-    InfixExpression, IntegerLiteral, LetStatement, Node, PrefixExpression, ReturnStatement,
+    InfixExpression, IntegerLiteral, LetStatement, Node, NullLiteral, PrefixExpression, ReturnStatement,
 };
 #[cfg(test)]
 use crate::lexer::Lexer;
@@ -229,6 +229,27 @@ fn boolean_literal_expression() {
         .expect("Expected boolean literal expression");
     assert_eq!(integer_literal.value, false);
     assert_eq!(integer_literal.token_literal(), "false");
+}
+
+#[test]
+fn null_literal_expression() {
+    let input = "null;";
+    let lexer = Lexer::new(input);
+    let mut parser = Parser::new(lexer);
+    let program = parser.parse_program();
+    assert!(!has_parser_errors(&parser));
+    assert!(program.statements.len() == 1);
+    let statement = &program.statements[0];
+    let expression_statement = statement
+        .as_any()
+        .downcast_ref::<ExpressionStatement>()
+        .expect("Expected expression statement");
+    let null_literal = expression_statement
+        .expression
+        .as_any()
+        .downcast_ref::<NullLiteral>()
+        .expect("Expected null literal expression");
+    assert_eq!(null_literal.token_literal(), "null");
 }
 
 #[test]

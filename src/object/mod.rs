@@ -1,21 +1,17 @@
-pub enum ObjectType {
-    Integer,
-    Boolean,
-    Null,
-}
+use std::any::Any;
 
 pub trait Object {
-    fn typ(&self) -> ObjectType;
+    fn as_any(&self) -> &dyn Any;
     fn inspect(&self) -> String;
 }
 
 pub struct Integer {
-    value: i64,
+    pub value: i64,
 }
 
 impl Object for Integer {
-    fn typ(&self) -> ObjectType {
-        ObjectType::Integer
+    fn as_any(&self) -> &dyn Any {
+        self
     }
 
     fn inspect(&self) -> String {
@@ -25,19 +21,17 @@ impl Object for Integer {
 
 impl Integer {
     pub fn new(value: i64) -> Self {
-        Self {
-            value
-        }
+        Self { value }
     }
 }
 
 pub struct Boolean {
-    value: bool,
+    pub value: bool,
 }
 
 impl Object for Boolean {
-    fn typ(&self) -> ObjectType {
-        ObjectType::Boolean
+    fn as_any(&self) -> &dyn Any {
+        self
     }
 
     fn inspect(&self) -> String {
@@ -47,17 +41,15 @@ impl Object for Boolean {
 
 impl Boolean {
     pub fn new(value: bool) -> Self {
-        Self {
-            value
-        }
+        Self { value }
     }
 }
 
 pub struct Null {}
 
 impl Object for Null {
-    fn typ(&self) -> ObjectType {
-        ObjectType::Null
+    fn as_any(&self) -> &dyn Any {
+        self
     }
 
     fn inspect(&self) -> String {

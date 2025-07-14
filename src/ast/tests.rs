@@ -4,7 +4,7 @@ use crate::ast::{Identifier, IntegerLiteral, LetStatement, Node};
 use crate::token::{Token, TokenType};
 
 #[test]
-fn test_ast_string() {
+fn ast_string() {
     let let_statement = LetStatement::new(
         Token::new(TokenType::Let, "let"),
         Identifier::new(Token::new(TokenType::Ident, "bob"), "bob"),

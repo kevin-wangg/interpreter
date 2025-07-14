@@ -207,7 +207,7 @@ impl Parser {
         // If the current token is not a semicolon and semicolon is required, then add a
         // parser error.
         // If the current token is not a semicolon but semicolon is not required, then do nothing.
-        // If the currnet token is a semicolon, regardless of whether semicolon is required or not,
+        // If the current token is a semicolon, regardless of whether semicolon is required or not,
         // advance to the next token.
         if self.cur_token.token_type != TokenType::Semicolon {
             if requires_semi {

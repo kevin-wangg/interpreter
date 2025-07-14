@@ -27,10 +27,7 @@ fn integer_literal_evaluation() {
 
 #[test]
 fn boolean_literal_evaluation() {
-    let tests = vec![
-        ("true;", true),
-        ("false;", false),
-    ];
+    let tests = vec![("true;", true), ("false;", false)];
 
     for (input, expected) in tests {
         let evaluated = test_eval(input);
@@ -138,7 +135,6 @@ fn equality_infix_expressions() {
         ("1 != 1;", false),
         ("1 == 2;", false),
         ("1 != 2;", true),
-
         // Boolean equality
         ("true == true;", true),
         ("false == false;", true),
@@ -146,11 +142,9 @@ fn equality_infix_expressions() {
         ("true != false;", true),
         ("false != true;", true),
         ("false != false;", false),
-
         // Null equality
         ("null == null;", true),
         ("null != null;", false),
-
         // Cross-type equality
         ("1 == true;", false),
         ("1 != true;", true),
@@ -160,7 +154,6 @@ fn equality_infix_expressions() {
         ("null != 0;", true),
         ("null == false;", false),
         ("null != false;", true),
-
         // Complex expressions
         ("(1 < 2) == true;", true),
         ("(1 < 2) != false;", true),
@@ -182,7 +175,7 @@ fn division_by_zero_error() {
     let program = parser.parse_program();
     let mut evaluator = Evaluator::new();
 
-    let result = evaluator.eval(&Box::new(program));
+    let result = evaluator.eval(&program);
     assert!(result.is_err());
     if let Err(error) = result {
         assert!(error.error_message.contains("Division by zero"));
@@ -193,7 +186,7 @@ fn division_by_zero_error() {
 fn unknown_operator_errors() {
     let tests = vec![
         "true + false;", // Invalid operation for booleans
-        "null * 5;", // Invalid operation with null
+        "null * 5;",     // Invalid operation with null
     ];
 
     for input in tests {
@@ -202,8 +195,42 @@ fn unknown_operator_errors() {
         let program = parser.parse_program();
         let mut evaluator = Evaluator::new();
 
-        let result = evaluator.eval(&Box::new(program));
+        let result = evaluator.eval(&program);
         assert!(result.is_err(), "Expected error for input: {}", input);
+    }
+}
+
+#[test]
+fn if_expressions() {
+    let tests = vec![
+        // Basic if with truthy condition - note: blocks with single expressions work differently
+        ("if (true) { 10; };", Some(10)),
+        ("if (1) { 20; };", Some(20)),
+        ("if (5 > 3) { 30; };", Some(30)),
+        // Basic if with falsey condition (should return null)
+        ("if (false) { 10; };", None),
+        ("if (0) { 20; };", None),
+        ("if (3 > 5) { 30; };", None),
+        // If-else with truthy condition
+        ("if (true) { 10; } else { 20; };", Some(10)),
+        ("if (1) { 15; } else { 25; };", Some(15)),
+        ("if (5 > 3) { 100; } else { 200; };", Some(100)),
+        // If-else with falsey condition
+        ("if (false) { 10; } else { 20; };", Some(20)),
+        ("if (0) { 15; } else { 25; };", Some(25)),
+        ("if (3 > 5) { 100; } else { 200; };", Some(200)),
+        // Complex conditions
+        ("if (1 + 1 == 2) { 42; };", Some(42)),
+        ("if (5 * 2 > 8) { 99; } else { 11; };", Some(99)),
+        ("if (10 / 2 == 4) { 1; } else { 2; };", Some(2)),
+    ];
+
+    for (input, expected) in tests {
+        let evaluated = test_eval(input);
+        match expected {
+            Some(value) => test_integer_object(&evaluated, value),
+            None => test_null_object(&evaluated),
+        }
     }
 }
 
@@ -237,7 +264,7 @@ fn test_eval(input: &str) -> Box<dyn Object> {
     let program = parser.parse_program();
     let mut evaluator = Evaluator::new();
 
-    evaluator.eval(&Box::new(program)).expect("Evaluation failed")
+    evaluator.eval(&program).expect("Evaluation failed")
 }
 
 #[cfg(test)]

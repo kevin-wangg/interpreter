@@ -1,4 +1,7 @@
-use crate::ast::{BooleanLiteral, Expression, ExpressionStatement, InfixExpression, IntegerLiteral, Node, NullLiteral, PrefixExpression, Program};
+use crate::ast::{
+    BlockStatement, BooleanLiteral, Expression, ExpressionStatement, IfExpression, InfixExpression,
+    IntegerLiteral, Node, NullLiteral, PrefixExpression, Program,
+};
 use crate::object::{Boolean, Integer, Null, Object};
 
 mod tests;
@@ -23,18 +26,15 @@ impl Evaluator {
         Self {}
     }
 
-    pub fn eval<T: Node + ?Sized>(
-        &mut self,
-        node: &Box<T>,
-    ) -> Result<Box<dyn Object>, EvaluatorError> {
+    pub fn eval<T: Node + ?Sized>(&mut self, node: &T) -> Result<Box<dyn Object>, EvaluatorError> {
         if let Some(program) = node.as_any().downcast_ref::<Program>() {
             let mut ret: Box<dyn Object> = Box::new(Integer::new(69));
             for statement in &program.statements {
-                ret = self.eval(statement)?;
+                ret = self.eval(statement.as_ref())?;
             }
             Ok(ret)
         } else if let Some(statement) = node.as_any().downcast_ref::<ExpressionStatement>() {
-            self.eval(&statement.expression)
+            self.eval(statement.expression.as_ref())
         } else if let Some(integer_literal) = node.as_any().downcast_ref::<IntegerLiteral>() {
             Ok(Box::new(Integer::new(integer_literal.value)))
         } else if let Some(boolean_literal) = node.as_any().downcast_ref::<BooleanLiteral>() {
@@ -45,6 +45,14 @@ impl Evaluator {
             self.eval_prefix_expression(prefix_expression)
         } else if let Some(infix_expression) = node.as_any().downcast_ref::<InfixExpression>() {
             self.eval_infix_expression(infix_expression)
+        } else if let Some(if_expression) = node.as_any().downcast_ref::<IfExpression>() {
+            self.eval_if_expression(if_expression)
+        } else if let Some(block_statement) = node.as_any().downcast_ref::<BlockStatement>() {
+            let mut ret: Box<dyn Object> = Box::new(Integer::new(69));
+            for statement in &block_statement.statements {
+                ret = self.eval(statement.as_ref())?;
+            }
+            Ok(ret)
         } else {
             Err(EvaluatorError::new(
                 "Evaluator encountered unknown AST type",
@@ -52,48 +60,43 @@ impl Evaluator {
         }
     }
 
-    fn eval_prefix_expression(&mut self, prefix_expression: &PrefixExpression) -> Result<Box<dyn Object>, EvaluatorError> {
+    fn eval_prefix_expression(
+        &mut self,
+        prefix_expression: &PrefixExpression,
+    ) -> Result<Box<dyn Object>, EvaluatorError> {
         match prefix_expression.operator.as_ref() {
-            "!" => {
-                self.eval_bang_expression(&prefix_expression.right)
-            }
-            "-" => {
-                self.eval_minus_expression(&prefix_expression.right)
-            }
-            _ => {
-                Err(EvaluatorError::new("Unknown operator in prefix expression"))
-            }
+            "!" => self.eval_bang_expression(prefix_expression.right.as_ref()),
+            "-" => self.eval_minus_expression(prefix_expression.right.as_ref()),
+            _ => Err(EvaluatorError::new("Unknown operator in prefix expression")),
         }
     }
 
-    fn eval_infix_expression(&mut self, infix_expression: &InfixExpression) -> Result<Box<dyn Object>, EvaluatorError> {
+    fn eval_infix_expression(
+        &mut self,
+        infix_expression: &InfixExpression,
+    ) -> Result<Box<dyn Object>, EvaluatorError> {
         match infix_expression.operator.as_ref() {
             "+" | "-" | "*" | "/" | ">=" | "<=" | ">" | "<" => {
                 self.eval_integer_infix_expression(infix_expression)
             }
-            "==" | "!=" => {
-                self.eval_equality_infix_expression(infix_expression)
-            }
-            _ => {
-                Err(EvaluatorError::new("Unknown operator in infix expression"))
-            }
+            "==" | "!=" => self.eval_equality_infix_expression(infix_expression),
+            _ => Err(EvaluatorError::new("Unknown operator in infix expression")),
         }
     }
 
-    fn eval_integer_infix_expression(&mut self, infix_expression: &InfixExpression) -> Result<Box<dyn Object>, EvaluatorError> {
-        let left = self.eval(&infix_expression.left)?;
-        let right = self.eval(&infix_expression.right)?;
-        if let Some(left) = left.as_any().downcast_ref::<Integer>() && let Some(right) = right.as_any().downcast_ref::<Integer>() {
+    fn eval_integer_infix_expression(
+        &mut self,
+        infix_expression: &InfixExpression,
+    ) -> Result<Box<dyn Object>, EvaluatorError> {
+        let left = self.eval(infix_expression.left.as_ref())?;
+        let right = self.eval(infix_expression.right.as_ref())?;
+        if let Some(left) = left.as_any().downcast_ref::<Integer>()
+            && let Some(right) = right.as_any().downcast_ref::<Integer>()
+        {
             match infix_expression.operator.as_ref() {
-                "+" => {
-                    Ok(Box::new(Integer::new(left.value + right.value)))
-                }
-                "-" => {
-                    Ok(Box::new(Integer::new(left.value - right.value)))
-                }
-                "*" => {
-                    Ok(Box::new(Integer::new(left.value * right.value)))
-                }
+                "+" => Ok(Box::new(Integer::new(left.value + right.value))),
+                "-" => Ok(Box::new(Integer::new(left.value - right.value))),
+                "*" => Ok(Box::new(Integer::new(left.value * right.value))),
                 "/" => {
                     if right.value == 0 {
                         Err(EvaluatorError::new("Division by zero"))
@@ -101,37 +104,38 @@ impl Evaluator {
                         Ok(Box::new(Integer::new(left.value / right.value)))
                     }
                 }
-                ">" => {
-                    Ok(Box::new(Boolean::new(left.value > right.value)))
-                }
-                "<" => {
-                    Ok(Box::new(Boolean::new(left.value < right.value)))
-                }
-                ">=" => {
-                    Ok(Box::new(Boolean::new(left.value >= right.value)))
-                }
-                "<=" => {
-                    Ok(Box::new(Boolean::new(left.value <= right.value)))
-                }
-                _ => {
-                    Err(EvaluatorError::new("Unknown integer infix operator"))
-                }
+                ">" => Ok(Box::new(Boolean::new(left.value > right.value))),
+                "<" => Ok(Box::new(Boolean::new(left.value < right.value))),
+                ">=" => Ok(Box::new(Boolean::new(left.value >= right.value))),
+                "<=" => Ok(Box::new(Boolean::new(left.value <= right.value))),
+                _ => Err(EvaluatorError::new("Unknown integer infix operator")),
             }
         } else {
-            Err(EvaluatorError::new("Expected integer expressions in infix expression"))
+            Err(EvaluatorError::new(
+                "Expected integer expressions in infix expression",
+            ))
         }
     }
 
-    // Note: It is valid in the Monkey language to compare two expressions of different types
-    fn eval_equality_infix_expression(&mut self, infix_expression: &InfixExpression) -> Result<Box<dyn Object>, EvaluatorError> {
-        let left = self.eval(&infix_expression.left)?;
-        let right = self.eval(&infix_expression.right)?;
+    // Note: It is valid in the Monkey language to compare two expressions of different types. Two expressions of different types are
+    // always considered to be not equal.
+    fn eval_equality_infix_expression(
+        &mut self,
+        infix_expression: &InfixExpression,
+    ) -> Result<Box<dyn Object>, EvaluatorError> {
+        let left = self.eval(infix_expression.left.as_ref())?;
+        let right = self.eval(infix_expression.right.as_ref())?;
         match infix_expression.operator.as_ref() {
             "==" => {
-                // Handle equality comparison for different types
-                if let (Some(left_int), Some(right_int)) = (left.as_any().downcast_ref::<Integer>(), right.as_any().downcast_ref::<Integer>()) {
+                if let (Some(left_int), Some(right_int)) = (
+                    left.as_any().downcast_ref::<Integer>(),
+                    right.as_any().downcast_ref::<Integer>(),
+                ) {
                     Ok(Box::new(Boolean::new(left_int.value == right_int.value)))
-                } else if let (Some(left_bool), Some(right_bool)) = (left.as_any().downcast_ref::<Boolean>(), right.as_any().downcast_ref::<Boolean>()) {
+                } else if let (Some(left_bool), Some(right_bool)) = (
+                    left.as_any().downcast_ref::<Boolean>(),
+                    right.as_any().downcast_ref::<Boolean>(),
+                ) {
                     Ok(Box::new(Boolean::new(left_bool.value == right_bool.value)))
                 } else if left.as_any().is::<Null>() && right.as_any().is::<Null>() {
                     Ok(Box::new(Boolean::new(true)))
@@ -140,10 +144,15 @@ impl Evaluator {
                 }
             }
             "!=" => {
-                // Handle inequality comparison for different types
-                if let (Some(left_int), Some(right_int)) = (left.as_any().downcast_ref::<Integer>(), right.as_any().downcast_ref::<Integer>()) {
+                if let (Some(left_int), Some(right_int)) = (
+                    left.as_any().downcast_ref::<Integer>(),
+                    right.as_any().downcast_ref::<Integer>(),
+                ) {
                     Ok(Box::new(Boolean::new(left_int.value != right_int.value)))
-                } else if let (Some(left_bool), Some(right_bool)) = (left.as_any().downcast_ref::<Boolean>(), right.as_any().downcast_ref::<Boolean>()) {
+                } else if let (Some(left_bool), Some(right_bool)) = (
+                    left.as_any().downcast_ref::<Boolean>(),
+                    right.as_any().downcast_ref::<Boolean>(),
+                ) {
                     Ok(Box::new(Boolean::new(left_bool.value != right_bool.value)))
                 } else if left.as_any().is::<Null>() && right.as_any().is::<Null>() {
                     Ok(Box::new(Boolean::new(false)))
@@ -151,27 +160,60 @@ impl Evaluator {
                     Ok(Box::new(Boolean::new(true)))
                 }
             }
-            _ => {
-                Err(EvaluatorError::new("Unknown boolean infix operator"))
-            }
+            _ => Err(EvaluatorError::new("Unknown boolean infix operator")),
         }
     }
 
-    fn eval_bang_expression(&mut self, right: &Box<dyn Expression>) -> Result<Box<dyn Object>, EvaluatorError> {
+    fn eval_if_expression(
+        &mut self,
+        if_expression: &IfExpression,
+    ) -> Result<Box<dyn Object>, EvaluatorError> {
+        let condition = self.eval(if_expression.condition.as_ref())?;
+        if is_truthy(condition.as_ref()) {
+            self.eval(&if_expression.consequence)
+        } else if let Some(alternative) = if_expression.alternative.as_ref() {
+            self.eval(alternative)
+        } else {
+            // If the if_expression has no else branch and the condition is falsey, then it evaluates to null
+            Ok(Box::new(Null::new()))
+        }
+    }
+
+    fn eval_bang_expression(
+        &mut self,
+        right: &dyn Expression,
+    ) -> Result<Box<dyn Object>, EvaluatorError> {
         let right = self.eval(right)?;
         if let Some(boolean) = right.as_any().downcast_ref::<Boolean>() {
             Ok(Box::new(Boolean::new(!boolean.value)))
         } else {
-            Err(EvaluatorError::new("Expected boolean expression after bang operator"))
+            Err(EvaluatorError::new(
+                "Expected boolean expression after bang operator",
+            ))
         }
     }
 
-    fn eval_minus_expression(&mut self, right: &Box<dyn Expression>) -> Result<Box<dyn Object>, EvaluatorError> {
+    fn eval_minus_expression(
+        &mut self,
+        right: &dyn Expression,
+    ) -> Result<Box<dyn Object>, EvaluatorError> {
         let right = self.eval(right)?;
         if let Some(integer) = right.as_any().downcast_ref::<Integer>() {
             Ok(Box::new(Integer::new(-integer.value)))
         } else {
-            Err(EvaluatorError::new("Expected integer expression after minus operator"))
+            Err(EvaluatorError::new(
+                "Expected integer expression after minus operator",
+            ))
         }
+    }
+}
+
+fn is_truthy(expression: &dyn Object) -> bool {
+    if let Some(boolean) = expression.as_any().downcast_ref::<Boolean>() {
+        boolean.value
+    } else if let Some(integer) = expression.as_any().downcast_ref::<Integer>() {
+        integer.value != 0
+    } else {
+        false
     }
 }

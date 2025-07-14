@@ -3,7 +3,9 @@ mod tests;
 use std::collections::HashMap;
 
 use crate::ast::{
-    BlockStatement, BooleanLiteral, CallExpression, Expression, ExpressionStatement, FunctionLiteral, IfExpression, InfixExpression, IntegerLiteral, NullLiteral, PrefixExpression, ReturnStatement
+    BlockStatement, BooleanLiteral, CallExpression, Expression, ExpressionStatement,
+    FunctionLiteral, IfExpression, InfixExpression, IntegerLiteral, NullLiteral, PrefixExpression,
+    ReturnStatement,
 };
 
 type PrefixParseFn = fn(&mut Parser) -> Option<Box<dyn Expression>>;
@@ -233,7 +235,9 @@ impl Parser {
             };
         let mut left = prefix_function(self)?;
         loop {
-            if self.peek_token.token_type == TokenType::Semicolon || self.peek_token.token_type == TokenType::Comma {
+            if self.peek_token.token_type == TokenType::Semicolon
+                || self.peek_token.token_type == TokenType::Comma
+            {
                 break;
             } else {
                 let next_precedence =

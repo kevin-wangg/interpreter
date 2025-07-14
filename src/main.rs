@@ -32,7 +32,7 @@ fn main() {
                         println!("{}", statement.string());
                     }
                     let mut evaluator = Evaluator::new();
-                    match evaluator.eval(&Box::new(program)) {
+                    match evaluator.eval(&program) {
                         Ok(value) => {
                             println!("Evaluated value:");
                             println!("{}", value.inspect());

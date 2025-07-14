@@ -386,7 +386,7 @@ impl Node for IfExpression {
         match self.alternative.as_ref() {
             Some(alternative) => {
                 format!(
-                    "if {} {} else {}",
+                    "if ({}) {} else {}",
                     self.condition.string(),
                     self.consequence.string(),
                     alternative.string()
@@ -394,7 +394,7 @@ impl Node for IfExpression {
             }
             None => {
                 format!(
-                    "if {} {}",
+                    "if ({}) {}",
                     self.condition.string(),
                     self.consequence.string(),
                 )

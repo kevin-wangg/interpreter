@@ -255,6 +255,80 @@ fn complex_expressions() {
     }
 }
 
+#[test]
+fn return_statements() {
+    let tests = vec![
+        // Simple return statements
+        ("return 10;", 10),
+        ("return 42;", 42),
+        ("return -5;", -5),
+        // Return with expression
+        ("return 2 * 5;", 10),
+        ("return 10 + 5;", 15),
+        ("return 20 / 4;", 5),
+        // Return with complex expression
+        ("return 5 + 5 * 2;", 15),
+        ("return (10 + 2) / 3;", 4),
+        // Return stops execution
+        ("return 10; 9;", 10),
+        ("return 2 * 5; 9;", 10),
+        ("return 1; return 2;", 1),
+        // Return with other statements
+        ("9; return 10;", 10),
+        ("9; return 2 * 5; 9;", 10),
+    ];
+
+    for (input, expected) in tests {
+        let evaluated = test_eval(input);
+        test_integer_object(&evaluated, expected);
+    }
+}
+
+#[test]
+fn return_statements_with_conditionals() {
+    let tests = vec![
+        // Return in if block
+        ("if (true) { return 10; };", 10),
+        ("if (false) { return 10; } else { return 20; };", 20),
+        ("if (1 > 0) { return 42; };", 42),
+        // Return stops execution even in nested blocks
+        ("if (true) { return 10; 9; };", 10),
+        ("if (true) { 5; return 20; 9; };", 20),
+        // Return with expressions in conditionals
+        ("if (5 > 3) { return 2 * 5; };", 10),
+        ("if (3 > 5) { return 1; } else { return 2; };", 2),
+    ];
+
+    for (input, expected) in tests {
+        let evaluated = test_eval(input);
+        test_integer_object(&evaluated, expected);
+    }
+}
+
+#[test]
+fn return_statements_with_boolean_values() {
+    let tests = vec![
+        ("return true;", true),
+        ("return false;", false),
+        ("return 1 > 2;", false),
+        ("return 2 > 1;", true),
+        ("return true == false;", false),
+        ("return true != false;", true),
+    ];
+
+    for (input, expected) in tests {
+        let evaluated = test_eval(input);
+        test_boolean_object(&evaluated, expected);
+    }
+}
+
+#[test]
+fn return_null_value() {
+    let input = "return null;";
+    let evaluated = test_eval(input);
+    test_null_object(&evaluated);
+}
+
 // Helper functions
 
 #[cfg(test)]

@@ -75,6 +75,16 @@ impl Null {
 
 // ========== Null End ==========
 
+// ========== Function Start ==========
+
+pub struct Function {
+
+}
+
+// ========== Function End ==========
+
+// ========== ReturnValue Start ==========
+
 pub struct ReturnValue {
     pub value: Box<dyn Object>,
 }
@@ -94,3 +104,5 @@ impl ReturnValue {
         Self { value }
     }
 }
+
+// ========== ReturnValue End ==========

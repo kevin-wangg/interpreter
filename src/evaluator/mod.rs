@@ -1,12 +1,15 @@
+mod environment;
+mod tests;
+
 use std::any::Any;
 
 use crate::ast::{
-    BlockStatement, BooleanLiteral, Expression, ExpressionStatement, IfExpression, InfixExpression,
-    IntegerLiteral, Node, NullLiteral, PrefixExpression, Program, ReturnStatement,
+    BlockStatement, BooleanLiteral, Expression, ExpressionStatement, FunctionLiteral, Identifier,
+    IfExpression, InfixExpression, IntegerLiteral, LetStatement, Node, NullLiteral,
+    PrefixExpression, Program, ReturnStatement,
 };
+use crate::evaluator::environment::Environment;
 use crate::object::{Boolean, Integer, Null, Object, ReturnValue};
-
-mod tests;
 
 #[derive(Debug)]
 pub struct EvaluatorError {
@@ -21,11 +24,15 @@ impl EvaluatorError {
     }
 }
 
-pub struct Evaluator {}
+pub struct Evaluator {
+    environment: Environment,
+}
 
 impl Evaluator {
     pub fn new() -> Self {
-        Self {}
+        Self {
+            environment: Environment::new(),
+        }
     }
 
     pub fn eval<T: Node + ?Sized>(&mut self, node: &T) -> Result<Box<dyn Object>, EvaluatorError> {
@@ -39,7 +46,9 @@ impl Evaluator {
                 // way to do this, please let me know :(
                 if ret.as_any().is::<ReturnValue>() {
                     let ret: Box<dyn Any> = ret;
-                    let return_value = ret.downcast::<ReturnValue>().expect("Object should be ReturnValue");
+                    let return_value = ret
+                        .downcast::<ReturnValue>()
+                        .expect("Object should be ReturnValue");
                     let value = return_value.value;
                     return Ok(value);
                 }
@@ -53,6 +62,14 @@ impl Evaluator {
             Ok(Box::new(Boolean::new(boolean_literal.value)))
         } else if node.as_any().is::<NullLiteral>() {
             Ok(Box::new(Null::new()))
+        } else if let Some(identifier) = node.as_any().downcast_ref::<Identifier>() {
+            match self.environment.get(&identifier.value) {
+                Some(value) => panic!("this doesn't work yet"),
+                None => Err(EvaluatorError::new(&format!(
+                    "Unknown identifier found: {}",
+                    identifier.value
+                ))),
+            }
         } else if let Some(prefix_expression) = node.as_any().downcast_ref::<PrefixExpression>() {
             self.eval_prefix_expression(prefix_expression)
         } else if let Some(infix_expression) = node.as_any().downcast_ref::<InfixExpression>() {
@@ -70,6 +87,8 @@ impl Evaluator {
             Ok(ret)
         } else if let Some(return_statement) = node.as_any().downcast_ref::<ReturnStatement>() {
             self.eval_return_statement(return_statement)
+        } else if let Some(let_statement) = node.as_any().downcast_ref::<LetStatement>() {
+            self.eval_let_statement(let_statement)
         } else {
             Err(EvaluatorError::new(
                 "Evaluator encountered unknown AST type",
@@ -187,6 +206,16 @@ impl Evaluator {
     ) -> Result<Box<dyn Object>, EvaluatorError> {
         let expression = self.eval(return_statement.return_value.as_ref())?;
         Ok(Box::new(ReturnValue::new(expression)))
+    }
+
+    fn eval_let_statement(
+        &mut self,
+        let_statement: &LetStatement,
+    ) -> Result<Box<dyn Object>, EvaluatorError> {
+        let value = self.eval(let_statement.value.as_ref())?;
+        let id = &let_statement.name.value;
+        self.environment.insert(id, value);
+        Ok(Box::new(Null::new()))
     }
 
     fn eval_if_expression(

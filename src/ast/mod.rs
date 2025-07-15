@@ -238,6 +238,8 @@ impl Expression for BooleanLiteral {}
 
 // ========== Boolean literal End ==========
 
+// ========== Null literal Start ==========
+
 pub struct NullLiteral {
     pub token: Token,
 }
@@ -263,6 +265,8 @@ impl Node for NullLiteral {
 }
 
 impl Expression for NullLiteral {}
+
+// ========== Null literal End ==========
 
 // ========== Prefix expression Start ==========
 

@@ -1,9 +1,11 @@
 use std::any::Any;
 
-pub trait Object {
+pub trait Object: Any {
     fn as_any(&self) -> &dyn Any;
     fn inspect(&self) -> String;
 }
+
+// ========== Integer Start ==========
 
 pub struct Integer {
     pub value: i64,
@@ -25,6 +27,10 @@ impl Integer {
     }
 }
 
+// ========== Integer End ==========
+
+// ========== Boolean Start ==========
+
 pub struct Boolean {
     pub value: bool,
 }
@@ -45,6 +51,10 @@ impl Boolean {
     }
 }
 
+// ========== Boolean End ==========
+
+// ========== Null Start ==========
+
 pub struct Null {}
 
 impl Object for Null {
@@ -60,5 +70,27 @@ impl Object for Null {
 impl Null {
     pub fn new() -> Self {
         Self {}
+    }
+}
+
+// ========== Null End ==========
+
+pub struct ReturnValue {
+    pub value: Box<dyn Object>,
+}
+
+impl Object for ReturnValue {
+    fn as_any(&self) -> &dyn Any {
+        self
+    }
+
+    fn inspect(&self) -> String {
+        self.value.inspect()
+    }
+}
+
+impl ReturnValue {
+    pub fn new(value: Box<dyn Object>) -> Self {
+        Self { value }
     }
 }

@@ -1,8 +1,10 @@
+use std::any::Any;
+
 use crate::ast::{
     BlockStatement, BooleanLiteral, Expression, ExpressionStatement, IfExpression, InfixExpression,
-    IntegerLiteral, Node, NullLiteral, PrefixExpression, Program,
+    IntegerLiteral, Node, NullLiteral, PrefixExpression, Program, ReturnStatement,
 };
-use crate::object::{Boolean, Integer, Null, Object};
+use crate::object::{Boolean, Integer, Null, Object, ReturnValue};
 
 mod tests;
 
@@ -31,6 +33,16 @@ impl Evaluator {
             let mut ret: Box<dyn Object> = Box::new(Integer::new(69));
             for statement in &program.statements {
                 ret = self.eval(statement.as_ref())?;
+                // If we encounter a ReturnValue, then return right away and don't evaluate the remaining statements.
+                // I needed to convert ret to a Box<dyn Any> here in order to be able to downcast it to an owned value
+                // of ReturnValue, which is needed for the return type to be a Box<dyn Object>. If there is a better
+                // way to do this, please let me know :(
+                if ret.as_any().is::<ReturnValue>() {
+                    let ret: Box<dyn Any> = ret;
+                    let return_value = ret.downcast::<ReturnValue>().expect("Object should be ReturnValue");
+                    let value = return_value.value;
+                    return Ok(value);
+                }
             }
             Ok(ret)
         } else if let Some(statement) = node.as_any().downcast_ref::<ExpressionStatement>() {
@@ -51,8 +63,13 @@ impl Evaluator {
             let mut ret: Box<dyn Object> = Box::new(Integer::new(69));
             for statement in &block_statement.statements {
                 ret = self.eval(statement.as_ref())?;
+                if ret.as_any().is::<ReturnValue>() {
+                    break;
+                }
             }
             Ok(ret)
+        } else if let Some(return_statement) = node.as_any().downcast_ref::<ReturnStatement>() {
+            self.eval_return_statement(return_statement)
         } else {
             Err(EvaluatorError::new(
                 "Evaluator encountered unknown AST type",
@@ -162,6 +179,14 @@ impl Evaluator {
             }
             _ => Err(EvaluatorError::new("Unknown boolean infix operator")),
         }
+    }
+
+    fn eval_return_statement(
+        &mut self,
+        return_statement: &ReturnStatement,
+    ) -> Result<Box<dyn Object>, EvaluatorError> {
+        let expression = self.eval(return_statement.return_value.as_ref())?;
+        Ok(Box::new(ReturnValue::new(expression)))
     }
 
     fn eval_if_expression(

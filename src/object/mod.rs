@@ -1,12 +1,17 @@
 use std::any::Any;
 
-pub trait Object: Any {
+use dyn_clone::DynClone;
+
+pub trait Object: Any + DynClone {
     fn as_any(&self) -> &dyn Any;
     fn inspect(&self) -> String;
 }
 
+dyn_clone::clone_trait_object!(Object);
+
 // ========== Integer Start ==========
 
+#[derive(Clone)]
 pub struct Integer {
     pub value: i64,
 }
@@ -31,6 +36,7 @@ impl Integer {
 
 // ========== Boolean Start ==========
 
+#[derive(Clone)]
 pub struct Boolean {
     pub value: bool,
 }
@@ -55,6 +61,7 @@ impl Boolean {
 
 // ========== Null Start ==========
 
+#[derive(Clone)]
 pub struct Null {}
 
 impl Object for Null {
@@ -77,6 +84,7 @@ impl Null {
 
 // ========== Function Start ==========
 
+#[derive(Clone)]
 pub struct Function {
 
 }
@@ -85,6 +93,7 @@ pub struct Function {
 
 // ========== ReturnValue Start ==========
 
+#[derive(Clone)]
 pub struct ReturnValue {
     pub value: Box<dyn Object>,
 }

@@ -64,7 +64,9 @@ impl Evaluator {
             Ok(Box::new(Null::new()))
         } else if let Some(identifier) = node.as_any().downcast_ref::<Identifier>() {
             match self.environment.get(&identifier.value) {
-                Some(value) => panic!("this doesn't work yet"),
+                Some(value) => {
+                    Ok(value.clone())
+                }
                 None => Err(EvaluatorError::new(&format!(
                     "Unknown identifier found: {}",
                     identifier.value

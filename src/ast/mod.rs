@@ -2,12 +2,14 @@ mod tests;
 
 use std::any::Any;
 
+use dyn_clone::DynClone;
+
 use crate::token::Token;
 
 /// Represents a node in the AST. Each node implements the `token_literal` function, which
 /// is mainly used for debugging purposes. It returns the literal of the token associated
 /// with this node.
-pub trait Node {
+pub trait Node: DynClone {
     fn token_literal(&self) -> String;
     fn as_any(&self) -> &dyn Any;
     fn string(&self) -> String;
@@ -17,6 +19,11 @@ pub trait Statement: Node {}
 
 pub trait Expression: Node {}
 
+dyn_clone::clone_trait_object!(Node);
+dyn_clone::clone_trait_object!(Statement);
+dyn_clone::clone_trait_object!(Expression);
+
+#[derive(Clone)]
 pub struct Program {
     pub statements: Vec<Box<dyn Statement>>,
 }
@@ -47,6 +54,7 @@ impl Node for Program {
 
 // ========== Identifier Start ==========
 
+#[derive(Clone)]
 pub struct Identifier {
     pub token: Token,
     pub value: String,
@@ -81,6 +89,7 @@ impl Expression for Identifier {}
 
 // ========== Let statement Start ==========
 
+#[derive(Clone)]
 pub struct LetStatement {
     pub token: Token,
     pub name: Identifier,
@@ -113,6 +122,7 @@ impl Statement for LetStatement {}
 
 // ========== Return statement Start ==========
 
+#[derive(Clone)]
 pub struct ReturnStatement {
     pub token: Token,
     pub return_value: Box<dyn Expression>,
@@ -147,6 +157,7 @@ impl Statement for ReturnStatement {}
 
 // ========== Expression statement Start ==========
 
+#[derive(Clone)]
 pub struct ExpressionStatement {
     pub token: Token,
     pub expression: Box<dyn Expression>,
@@ -178,6 +189,7 @@ impl Statement for ExpressionStatement {}
 
 // ========== Integer literal Start ==========
 
+#[derive(Clone)]
 pub struct IntegerLiteral {
     pub token: Token,
     pub value: i64,
@@ -209,6 +221,7 @@ impl Expression for IntegerLiteral {}
 
 // ========== Boolean literal Start ==========
 
+#[derive(Clone)]
 pub struct BooleanLiteral {
     pub token: Token,
     pub value: bool,
@@ -240,6 +253,7 @@ impl Expression for BooleanLiteral {}
 
 // ========== Null literal Start ==========
 
+#[derive(Clone)]
 pub struct NullLiteral {
     pub token: Token,
 }
@@ -270,6 +284,7 @@ impl Expression for NullLiteral {}
 
 // ========== Prefix expression Start ==========
 
+#[derive(Clone)]
 pub struct PrefixExpression {
     pub token: Token,
     pub operator: String,
@@ -306,6 +321,7 @@ impl Expression for PrefixExpression {}
 
 // ========== Infix expression Start ==========
 
+#[derive(Clone)]
 pub struct InfixExpression {
     pub token: Token,
     pub operator: String,
@@ -354,6 +370,7 @@ impl Expression for InfixExpression {}
 
 // ========== IfExpression Start ==========
 
+#[derive(Clone)]
 pub struct IfExpression {
     pub token: Token,
     pub condition: Box<dyn Expression>,
@@ -413,6 +430,7 @@ impl Expression for IfExpression {}
 
 // ========== BlockStatement Start ==========
 
+#[derive(Clone)]
 pub struct BlockStatement {
     pub token: Token,
     pub statements: Vec<Box<dyn Statement>>,
@@ -450,6 +468,7 @@ impl Statement for BlockStatement {}
 
 // ========== Function literal Start ==========
 
+#[derive(Clone)]
 pub struct FunctionLiteral {
     pub token: Token,
     pub parameters: Vec<Identifier>,
@@ -492,6 +511,7 @@ impl Expression for FunctionLiteral {}
 
 // ========== Call expression Start ==========
 
+#[derive(Clone)]
 pub struct CallExpression {
     pub token: Token,                  // The ( token
     pub function: Box<dyn Expression>, // Even though the type allows for any Expression here, in practice this should only be an identifier or a function literal

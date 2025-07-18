@@ -370,3 +370,37 @@ fn test_null_object(obj: &Box<dyn Object>) {
         panic!("Expected Null object, got different type");
     }
 }
+
+#[test]
+fn factorial_function() {
+    let input = r#"
+        def factorial(n) {
+            if (n <= 1) {
+                return 1;
+            } else {
+                return n * factorial(n - 1);
+            }
+        }
+        factorial(5);
+    "#;
+    
+    let evaluated = test_eval(input);
+    test_integer_object(&evaluated, 120);
+}
+
+#[test]
+fn fibonacci_function() {
+    let input = r#"
+        def fibonacci(n) {
+            if (n <= 1) {
+                return n;
+            } else {
+                return fibonacci(n - 1) + fibonacci(n - 2);
+            }
+        }
+        fibonacci(8);
+    "#;
+    
+    let evaluated = test_eval(input);
+    test_integer_object(&evaluated, 21);
+}

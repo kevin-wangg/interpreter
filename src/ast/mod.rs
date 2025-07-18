@@ -120,6 +120,58 @@ impl Statement for LetStatement {}
 
 // ========== Let statement End ==========
 
+// ========== Def statement Start ==========
+
+#[derive(Clone)]
+pub struct DefStatement {
+    pub token: Token,
+    pub name: Identifier,
+    pub parameters: Vec<Identifier>,
+    pub body: BlockStatement,
+}
+
+impl DefStatement {
+    pub fn new(
+        token: Token,
+        name: Identifier,
+        parameters: Vec<Identifier>,
+        body: BlockStatement,
+    ) -> Self {
+        Self {
+            token, name, parameters, body
+        }
+    }
+}
+
+impl Node for DefStatement {
+    fn token_literal(&self) -> String {
+        self.token.literal.clone()
+    }
+
+    fn as_any(&self) -> &dyn Any {
+        self
+    }
+
+    fn string(&self) -> String {
+        let parameter_string = self
+            .parameters
+            .iter()
+            .map(|identifier| identifier.string())
+            .collect::<Vec<_>>()
+            .join(",");
+        format!(
+            "def {}({}) {}",
+            self.name.value,
+            parameter_string,
+            self.body.string()
+        )
+    }
+}
+
+impl Statement for DefStatement {}
+
+// ========== Def statement End ==========
+
 // ========== Return statement Start ==========
 
 #[derive(Clone)]

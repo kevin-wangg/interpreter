@@ -5,7 +5,7 @@ mod tests;
 use std::any::Any;
 
 use crate::ast::{
-    BlockStatement, BooleanLiteral, CallExpression, Expression, ExpressionStatement,
+    BlockStatement, BooleanLiteral, CallExpression, DefStatement, Expression, ExpressionStatement,
     FunctionLiteral, Identifier, IfExpression, InfixExpression, IntegerLiteral, LetStatement, Node,
     NullLiteral, PrefixExpression, Program, ReturnStatement, Statement,
 };
@@ -52,7 +52,7 @@ impl Evaluator {
             Ok(Box::new(Function::new(
                 &function_literal.parameters,
                 function_literal.body.clone(),
-                function_env,
+                Some(function_env),
             )))
         } else if let Some(identifier) = node.as_any().downcast_ref::<Identifier>() {
             match env.get(&identifier.value) {
@@ -77,11 +77,27 @@ impl Evaluator {
             self.eval_return_statement(return_statement, env)
         } else if let Some(let_statement) = node.as_any().downcast_ref::<LetStatement>() {
             self.eval_let_statement(let_statement, env)
+        } else if let Some(def_statement) = node.as_any().downcast_ref::<DefStatement>() {
+            self.eval_def_statement(def_statement, env)
         } else {
             Err(EvaluatorError::new(
                 "Evaluator encountered unknown AST type",
             ))
         }
+    }
+
+    fn eval_def_statement(
+        &mut self,
+        def_statement: &DefStatement,
+        env: &mut Environment,
+    ) -> Result<Box<dyn Object>, EvaluatorError> {
+        let function = Function::new(
+            &def_statement.parameters,
+            def_statement.body.clone(),
+            None,
+        );
+        env.insert(&def_statement.name, Box::new(function));
+        Ok(Box::new(Null::new()))
     }
 
     fn eval_block_statement(
@@ -118,6 +134,7 @@ impl Evaluator {
             .arguments
             .iter()
             .map(|arg| {
+                // I used .expect here because I am lazy
                 self.eval(arg.as_ref(), env)
                     .expect("Error evaluating argument")
             })
@@ -129,7 +146,7 @@ impl Evaluator {
         {
             let function: Box<dyn Any> = self.eval(function_literal, env)?;
             if let Ok(function) = function.downcast::<Function>() {
-                self.apply_function(function, arguments)
+                self.apply_function(function, arguments, None)
             } else {
                 Err(EvaluatorError::new(
                     "Expected function literal to evaluate to function",
@@ -143,7 +160,7 @@ impl Evaluator {
             if let Some(value) = env.get(&identifier.value) {
                 let value: Box<dyn Any> = value.clone();
                 if let Ok(function) = value.downcast::<Function>() {
-                    self.apply_function(function, arguments)
+                    self.apply_function(function, arguments, Some(&identifier))
                 } else {
                     Err(EvaluatorError::new(&format!(
                         "Expected function literal in call expression. {} is not a function literal",
@@ -165,8 +182,9 @@ impl Evaluator {
 
     fn apply_function(
         &mut self,
-        mut function: Box<Function>,
+        function: Box<Function>,
         arguments: Vec<Box<dyn Object>>,
+        name: Option<&Identifier>,
     ) -> Result<Box<dyn Object>, EvaluatorError> {
         if function.parameters.len() != arguments.len() {
             return Err(EvaluatorError::new(&format!(
@@ -175,14 +193,21 @@ impl Evaluator {
                 arguments.len()
             )));
         }
+        let mut env = if let Some(function_env) = function.env {
+            function_env
+        } else {
+            let mut env = Environment::new();
+            env.insert(name.expect("Non closure function must have binding"), function.clone());
+            env
+        };
         function
             .parameters
             .iter()
             .zip(arguments)
             .for_each(|(param, arg)| {
-                function.env.insert(param, arg);
+                env.insert(param, arg);
             });
-        self.eval_block_statement(&function.body.statements, &mut function.env, true)
+        self.eval_block_statement(&function.body.statements, &mut env, true)
     }
 
     fn eval_prefix_expression(

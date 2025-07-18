@@ -30,6 +30,7 @@ pub enum TokenType {
     GreaterEq,
     LessEq,
     Null,
+    Def,
 }
 
 #[derive(Clone, Debug)]

@@ -3,9 +3,7 @@ mod tests;
 use std::collections::HashMap;
 
 use crate::ast::{
-    BlockStatement, BooleanLiteral, CallExpression, Expression, ExpressionStatement,
-    FunctionLiteral, IfExpression, InfixExpression, IntegerLiteral, NullLiteral, PrefixExpression,
-    ReturnStatement,
+    BlockStatement, BooleanLiteral, CallExpression, DefStatement, Expression, ExpressionStatement, FunctionLiteral, IfExpression, InfixExpression, IntegerLiteral, NullLiteral, PrefixExpression, ReturnStatement
 };
 
 type PrefixParseFn = fn(&mut Parser) -> Option<Box<dyn Expression>>;
@@ -111,11 +109,13 @@ impl Parser {
     }
 
     // This function should leave the parser in a state where cur_token points to the first token
-    // of the next statement.
+    // of the next statement. This allows us to selectively control which statements require an
+    // ending semicolon.
     fn parse_statement(&mut self) -> Option<Box<dyn Statement>> {
         match self.cur_token.token_type {
             TokenType::Let => self.parse_let_statement(),
             TokenType::Return => self.parse_return_statement(),
+            TokenType::Def => self.parse_def_statement(),
             // Default case is assume we are parsing an expression statement
             _ => self.parse_expression_statement(),
         }
@@ -139,6 +139,37 @@ impl Parser {
             }
         }
         Some(BlockStatement::new(token, statements))
+    }
+
+    // When this function is called, cur_token should be pointing to the Def
+    fn parse_def_statement(&mut self) -> Option<Box<dyn Statement>> {
+        let token = if self.cur_token.token_type == TokenType::Def {
+            self.cur_token.clone()
+        } else {
+            return None;
+        };
+        // If the next token is TokenType::Ident, then we advance the token pointers.
+        // Then `cur_token` points to the Identifier token.
+        let name = if self.expect_peek(TokenType::Ident) {
+            Identifier::new(self.cur_token.clone(), &self.cur_token.literal)
+        } else {
+            self.expect_error(TokenType::Ident);
+            return None;
+        };
+        if !self.expect_peek(TokenType::LParen) {
+            self.expect_error(TokenType::LParen);
+            return None;
+        }
+        // cur_token now points to the LParen
+        let parameters = self.parse_parameter_list()?;
+        if !self.expect_peek(TokenType::LBrace) {
+            self.expect_error(TokenType::LBrace);
+            return None;
+        }
+        // cur_token now points to the LBrace
+        let body = self.parse_block_statement()?;
+        self.next_token();
+        Some(Box::new(DefStatement::new(token, name, parameters, body)))
     }
 
     // When this function is called, cur_token should be pointing to the Let

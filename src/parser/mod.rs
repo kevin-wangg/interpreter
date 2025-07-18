@@ -416,21 +416,23 @@ impl Parser {
     fn parse_argument_list(&mut self) -> Option<Vec<Box<dyn Expression>>> {
         // cur_token points to the LParen here
         let mut ret = Vec::new();
-        self.next_token();
-        loop {
-            let argument = self.parse_expression(Precedence::Lowest as i32)?;
-            ret.push(argument);
-            // If the next token is RParen, then break out of the loop
-            if self.expect_peek(TokenType::RParen) {
-                break;
-            }
-            // Otherwise we expect a comma after the identifier. If there is isn't, then add a Parser error
-            // and break out of the loop
-            if !self.expect_peek(TokenType::Comma) {
-                self.expect_error(TokenType::Comma);
-                return None;
-            }
+        if !self.expect_peek(TokenType::RParen) {
             self.next_token();
+            loop {
+                let argument = self.parse_expression(Precedence::Lowest as i32)?;
+                ret.push(argument);
+                // If the next token is RParen, then break out of the loop
+                if self.expect_peek(TokenType::RParen) {
+                    break;
+                }
+                // Otherwise we expect a comma after the identifier. If there is isn't, then add a Parser error
+                // and break out of the loop
+                if !self.expect_peek(TokenType::Comma) {
+                    self.expect_error(TokenType::Comma);
+                    return None;
+                }
+                self.next_token();
+            }
         }
         // cur_token points to the RParen here
         Some(ret)
@@ -439,21 +441,23 @@ impl Parser {
     fn parse_parameter_list(&mut self) -> Option<Vec<Identifier>> {
         // cur_token points to the LParen here
         let mut ret = Vec::new();
-        self.next_token();
-        loop {
-            let identifier = Identifier::new(self.cur_token.clone(), &self.cur_token.literal);
-            ret.push(identifier);
-            // If the next token is RParen, then break out of the loop
-            if self.expect_peek(TokenType::RParen) {
-                break;
-            }
-            // Otherwise we expect a comma after the identifier. If there isn't a comma, then add a parser
-            // error and break out of the loop
-            if !self.expect_peek(TokenType::Comma) {
-                self.expect_error(TokenType::Comma);
-                return None;
-            }
+        if !self.expect_peek(TokenType::RParen) {
             self.next_token();
+            loop {
+                let identifier = Identifier::new(self.cur_token.clone(), &self.cur_token.literal);
+                ret.push(identifier);
+                // If the next token is RParen, then break out of the loop
+                if self.expect_peek(TokenType::RParen) {
+                    break;
+                }
+                // Otherwise we expect a comma after the identifier. If there isn't a comma, then add a parser
+                // error and break out of the loop
+                if !self.expect_peek(TokenType::Comma) {
+                    self.expect_error(TokenType::Comma);
+                    return None;
+                }
+                self.next_token();
+            }
         }
         // cur_token points to the RParen here
         Some(ret)

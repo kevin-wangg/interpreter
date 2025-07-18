@@ -6,7 +6,7 @@ This project is based on the book ["Writing An Interpreter In Go"](https://inter
 
 ### TODO
 - [x] Return statements
-- [ ] Environment passing
+- [x] Environment passing
 - [ ] Function literals evaluation
 - [ ] String support
 - [ ] Array support

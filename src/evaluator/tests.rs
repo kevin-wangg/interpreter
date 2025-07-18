@@ -1,4 +1,6 @@
 #[cfg(test)]
+use crate::evaluator::environment::Environment;
+#[cfg(test)]
 use crate::evaluator::Evaluator;
 #[cfg(test)]
 use crate::lexer::Lexer;
@@ -174,8 +176,9 @@ fn division_by_zero_error() {
     let mut parser = Parser::new(lexer);
     let program = parser.parse_program();
     let mut evaluator = Evaluator::new();
+    let mut env = Environment::new();
 
-    let result = evaluator.eval(&program);
+    let result = evaluator.eval(&program, &mut env);
     assert!(result.is_err());
     if let Err(error) = result {
         assert!(error.error_message.contains("Division by zero"));
@@ -194,8 +197,9 @@ fn unknown_operator_errors() {
         let mut parser = Parser::new(lexer);
         let program = parser.parse_program();
         let mut evaluator = Evaluator::new();
+        let mut env = Environment::new();
 
-        let result = evaluator.eval(&program);
+        let result = evaluator.eval(&program, &mut env);
         assert!(result.is_err(), "Expected error for input: {}", input);
     }
 }
@@ -337,8 +341,9 @@ fn test_eval(input: &str) -> Box<dyn Object> {
     let mut parser = Parser::new(lexer);
     let program = parser.parse_program();
     let mut evaluator = Evaluator::new();
+    let mut env = Environment::new();
 
-    evaluator.eval(&program).expect("Evaluation failed")
+    evaluator.eval(&program, &mut env).expect("Evaluation failed")
 }
 
 #[cfg(test)]

@@ -2,6 +2,9 @@ use std::any::Any;
 
 use dyn_clone::DynClone;
 
+use crate::ast::{BlockStatement, Identifier, Node};
+use crate::evaluator::environment::Environment;
+
 pub trait Object: Any + DynClone {
     fn as_any(&self) -> &dyn Any;
     fn inspect(&self) -> String;
@@ -86,7 +89,35 @@ impl Null {
 
 #[derive(Clone)]
 pub struct Function {
+    pub parameters: Vec<Identifier>,
+    pub body: BlockStatement,
+    pub env: Environment,
+}
 
+impl Object for Function {
+    fn as_any(&self) -> &dyn Any {
+        self
+    }
+
+    fn inspect(&self) -> String {
+        let parameter_string = self
+            .parameters
+            .iter()
+            .map(|identifier| identifier.string())
+            .collect::<Vec<_>>()
+            .join(",");
+        format!("fun({}) {}", parameter_string, self.body.string())
+    }
+}
+
+impl Function {
+    pub fn new(parameters: &[Identifier], body: BlockStatement, env: Environment) -> Self {
+        Self {
+            parameters: parameters.to_vec(),
+            body,
+            env,
+        }
+    }
 }
 
 // ========== Function End ==========

@@ -1,8 +1,14 @@
-# Monkey Programming Language Interpreter
+# Monkey Programming Language Interpreter (and compiler)
 
-A simple interpreter for the Monkey programming language, built in Rust.
+A simple interpreter (and compiler) for the Monkey programming language, built in Rust.
 
 This project is based on the book ["Writing An Interpreter In Go"](https://interpreterbook.com/) by Thorsten Ball, adapted to Rust.
+
+Notes about the language:
+- The `return` keyword is optional, functions/block statements always evaluate to their last expression
+- All statements must end with a semicolon, even if it's the last statement in a block
+- The difference between closures (let foo = fun ...) and functions (def foo ...) is that functions don't capture their environment.
+Recursive functions must be defined using functions and can't be defined using closures.
 
 ## Sample Programs
 

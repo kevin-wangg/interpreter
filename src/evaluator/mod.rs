@@ -91,11 +91,7 @@ impl Evaluator {
         def_statement: &DefStatement,
         env: &mut Environment,
     ) -> Result<Box<dyn Object>, EvaluatorError> {
-        let function = Function::new(
-            &def_statement.parameters,
-            def_statement.body.clone(),
-            None,
-        );
+        let function = Function::new(&def_statement.parameters, def_statement.body.clone(), None);
         env.insert(&def_statement.name, Box::new(function));
         Ok(Box::new(Null::new()))
     }
@@ -197,7 +193,10 @@ impl Evaluator {
             function_env
         } else {
             let mut env = Environment::new();
-            env.insert(name.expect("Non closure function must have binding"), function.clone());
+            env.insert(
+                name.expect("Non closure function must have binding"),
+                function.clone(),
+            );
             env
         };
         function

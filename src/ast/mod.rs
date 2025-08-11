@@ -138,7 +138,10 @@ impl DefStatement {
         body: BlockStatement,
     ) -> Self {
         Self {
-            token, name, parameters, body
+            token,
+            name,
+            parameters,
+            body,
         }
     }
 }

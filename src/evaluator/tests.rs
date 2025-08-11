@@ -1,7 +1,7 @@
 #[cfg(test)]
-use crate::evaluator::environment::Environment;
-#[cfg(test)]
 use crate::evaluator::Evaluator;
+#[cfg(test)]
+use crate::evaluator::environment::Environment;
 #[cfg(test)]
 use crate::lexer::Lexer;
 #[cfg(test)]
@@ -343,7 +343,9 @@ fn test_eval(input: &str) -> Box<dyn Object> {
     let mut evaluator = Evaluator::new();
     let mut env = Environment::new();
 
-    evaluator.eval(&program, &mut env).expect("Evaluation failed")
+    evaluator
+        .eval(&program, &mut env)
+        .expect("Evaluation failed")
 }
 
 #[cfg(test)]
@@ -383,7 +385,7 @@ fn factorial_function() {
         }
         factorial(5);
     "#;
-    
+
     let evaluated = test_eval(input);
     test_integer_object(&evaluated, 120);
 }
@@ -400,7 +402,7 @@ fn fibonacci_function() {
         }
         fibonacci(8);
     "#;
-    
+
     let evaluated = test_eval(input);
     test_integer_object(&evaluated, 21);
 }

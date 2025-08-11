@@ -3,7 +3,9 @@ mod tests;
 use std::collections::HashMap;
 
 use crate::ast::{
-    BlockStatement, BooleanLiteral, CallExpression, DefStatement, Expression, ExpressionStatement, FunctionLiteral, IfExpression, InfixExpression, IntegerLiteral, NullLiteral, PrefixExpression, ReturnStatement
+    BlockStatement, BooleanLiteral, CallExpression, DefStatement, Expression, ExpressionStatement,
+    FunctionLiteral, IfExpression, InfixExpression, IntegerLiteral, NullLiteral, PrefixExpression,
+    ReturnStatement,
 };
 
 type PrefixParseFn = fn(&mut Parser) -> Option<Box<dyn Expression>>;
@@ -242,12 +244,18 @@ impl Parser {
         // If the current token is not a semicolon but semicolon is not required, then do nothing.
         // If the current token is a semicolon, regardless of whether semicolon is required or not,
         // advance to the next token.
-        if self.cur_token.token_type != TokenType::Semicolon {
-            if requires_semi {
-                self.expect_error(TokenType::Semicolon);
-                return None;
-            }
-        } else {
+        //
+        // Uncomment this code block and comment the block below to enforce semicolons on all
+        // statements
+        // if self.cur_token.token_type != TokenType::Semicolon {
+        //     if requires_semi {
+        //         self.expect_error(TokenType::Semicolon);
+        //         return None;
+        //     }
+        // } else {
+        //     self.next_token();
+        // }
+        if self.cur_token.token_type == TokenType::Semicolon {
             self.next_token();
         }
         Some(Box::new(ExpressionStatement::new(token, expression)))

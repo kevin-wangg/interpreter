@@ -7,7 +7,7 @@ mod token;
 
 use std::io::{self, Write};
 
-use evaluator::{environment::Environment, Evaluator};
+use evaluator::{Evaluator, environment::Environment};
 use lexer::Lexer;
 use parser::{Parser, has_parser_errors};
 

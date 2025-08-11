@@ -19,7 +19,7 @@ impl Environment {
     pub fn new_wrapped(outer: &Environment) -> Self {
         Self {
             mapping: HashMap::new(),
-            outer: Some(Box::new(outer.clone()))
+            outer: Some(Box::new(outer.clone())),
         }
     }
 
@@ -29,9 +29,9 @@ impl Environment {
 
     pub fn get(&self, id: &str) -> Option<&Box<dyn Object>> {
         self.mapping.get(id).or_else(|| {
-            self.outer.as_ref().and_then(|environment| {
-                environment.get(id)
-            })
+            self.outer
+                .as_ref()
+                .and_then(|environment| environment.get(id))
         })
     }
 }

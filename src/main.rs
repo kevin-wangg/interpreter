@@ -5,13 +5,47 @@ mod object;
 mod parser;
 mod token;
 
+use std::env;
+use std::fs;
 use std::io::{self, Write};
+use std::process;
 
 use evaluator::{Evaluator, environment::Environment};
 use lexer::Lexer;
 use parser::{Parser, has_parser_errors};
 
-fn main() {
+fn execute_file(filename: &str) {
+    let contents = match fs::read_to_string(filename) {
+        Ok(contents) => contents,
+        Err(error) => {
+            eprintln!("Error reading file '{}': {}", filename, error);
+            process::exit(1);
+        }
+    };
+
+    let lexer = Lexer::new(&contents);
+    let mut parser = Parser::new(lexer);
+    let program = parser.parse_program();
+
+    if has_parser_errors(&parser) {
+        eprintln!("Parser errors found in file '{}'", filename);
+        process::exit(1);
+    }
+
+    let mut env = Environment::new();
+    let mut evaluator = Evaluator::new();
+    match evaluator.eval(&program, &mut env) {
+        Ok(value) => {
+            println!("{}", value.inspect());
+        }
+        Err(e) => {
+            eprintln!("Runtime error: {}", e.error_message);
+            process::exit(1);
+        }
+    }
+}
+
+fn run_repl() {
     println!("Welcome to the Monkey programming language!");
     println!("Press Ctrl+D to exit");
     let mut env = Environment::new();
@@ -21,7 +55,6 @@ fn main() {
         io::stdout().flush().expect("Failed to flush output");
         match io::stdin().read_line(&mut input_string) {
             Ok(0) => {
-                // EOF (Ctrl+D)
                 println!("Exiting... Bye Bye!");
                 break;
             }
@@ -37,7 +70,6 @@ fn main() {
                     let mut evaluator = Evaluator::new();
                     match evaluator.eval(&program, &mut env) {
                         Ok(value) => {
-                            // println!("Evaluated value:");
                             println!("{}", value.inspect());
                         }
                         Err(e) => {
@@ -51,5 +83,15 @@ fn main() {
                 break;
             }
         }
+    }
+}
+
+fn main() {
+    let args: Vec<String> = env::args().collect();
+
+    if args.len() > 1 {
+        execute_file(&args[1]);
+    } else {
+        run_repl();
     }
 }

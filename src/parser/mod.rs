@@ -236,7 +236,7 @@ impl Parser {
     fn parse_expression_statement(&mut self) -> Option<Box<dyn Statement>> {
         let token = self.cur_token.clone();
         let expression = self.parse_expression(Precedence::Lowest as i32)?;
-        let requires_semi = self.expr_requires_semi_to_be_stmt(&*expression);
+        // let requires_semi = self.expr_requires_semi_to_be_stmt(&*expression);
         // Advance token to potentially a semicolon
         self.next_token();
         // If the current token is not a semicolon and semicolon is required, then add a
@@ -405,9 +405,8 @@ impl Parser {
         }
         let consequence = self.parse_block_statement()?;
 
-        self.next_token();
-
-        if self.cur_token.token_type == TokenType::Else {
+        if self.peek_token.token_type == TokenType::Else {
+            self.next_token();
             if !self.expect_peek(TokenType::LBrace) {
                 self.expect_error(TokenType::LBrace);
                 return None;

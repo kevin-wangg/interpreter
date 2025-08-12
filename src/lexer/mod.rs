@@ -25,7 +25,7 @@ impl Lexer {
     }
 
     pub fn next_token(&mut self) -> Token {
-        self.skip_whitespace();
+        self.skip_whitespace_and_comments();
 
         let token = match self.cur_char {
             '=' => {
@@ -174,8 +174,25 @@ impl Lexer {
         c == '_'
     }
 
-    fn skip_whitespace(&mut self) {
-        while self.cur_char.is_whitespace() {
+    fn skip_whitespace_and_comments(&mut self) {
+        let mut skipped_whitespace = true;
+        while skipped_whitespace {
+            // Skip comments
+            if self.cur_char == '#' {
+                self.skip_til_newline();
+            }
+            // Skip whitespace. If no whitespace was skipped, then break out of the loop
+            skipped_whitespace = false;
+            while self.cur_char.is_whitespace() {
+                skipped_whitespace = true;
+                self.read_char();
+            }
+        }
+    }
+
+    // Advances characters until newline is encountered. This is used to handle comments
+    fn skip_til_newline(&mut self) {
+        while self.cur_char != '\n' {
             self.read_char();
         }
     }

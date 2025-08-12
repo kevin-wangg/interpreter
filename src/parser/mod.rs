@@ -545,9 +545,6 @@ impl Parser {
         ))
     }
 
-    /// This method should only be used during development. It is used to
-    /// skip to the end of a statement to skip over AST nodes that the parser
-    /// doesn't support yet.
     fn skip_to_statement_end(&mut self) {
         while self.cur_token.token_type != TokenType::Semicolon
             && self.cur_token.token_type != TokenType::Eof
@@ -576,6 +573,7 @@ impl Parser {
             .insert(token_type, infix_function);
     }
 
+    #[allow(dead_code)]
     fn expr_requires_semi_to_be_stmt(&self, statement: &dyn Expression) -> bool {
         if statement.as_any().is::<IfExpression>() {
             false

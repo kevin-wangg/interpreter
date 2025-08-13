@@ -383,6 +383,82 @@ fn test_array_object(obj: &Box<dyn Object>, expected: &str) {
 }
 
 #[test]
+fn array_index_evaluation() {
+    let tests = vec![
+        // Basic array indexing
+        ("[1, 2, 3][0];", 1),
+        ("[1, 2, 3][1];", 2),
+        ("[1, 2, 3][2];", 3),
+        ("[10, 20, 30][0];", 10),
+        ("[10, 20, 30][2];", 30),
+        // Array with expressions
+        ("[1 + 1, 2 * 3, 4 / 2][0];", 2),
+        ("[1 + 1, 2 * 3, 4 / 2][1];", 6),
+        ("[1 + 1, 2 * 3, 4 / 2][2];", 2),
+        // Index with expressions
+        ("[5, 10, 15][1 + 1];", 15),
+        ("[100, 200, 300][2 - 1];", 200),
+        ("[7, 14, 21][3 / 3 - 1];", 7),
+    ];
+
+    for (input, expected) in tests {
+        let evaluated = test_eval(input);
+        test_integer_object(&evaluated, expected);
+    }
+}
+
+#[test]
+fn array_index_with_mixed_types() {
+    let tests = vec![
+        // Arrays with different types
+        ("[true, false, true][0];", "true"),
+        ("[false, true, false][1];", "true"),
+        ("[true, false, true][2];", "true"),
+        ("[null, 42, true][0];", "null"),
+        ("[null, 42, true][1];", "42"),
+        ("[null, 42, true][2];", "true"),
+    ];
+
+    for (input, expected) in tests {
+        let evaluated = test_eval(input);
+        match expected {
+            "true" => test_boolean_object(&evaluated, true),
+            "false" => test_boolean_object(&evaluated, false),
+            "null" => test_null_object(&evaluated),
+            _ => {
+                if let Ok(int_val) = expected.parse::<i64>() {
+                    test_integer_object(&evaluated, int_val);
+                }
+            }
+        }
+    }
+}
+
+#[test]
+fn array_index_error_cases() {
+    let tests = vec![
+        // Out of bounds access
+        "[1, 2, 3][3];",
+        "[1, 2, 3][5];",
+        "[10][1];",
+        "[][0];",
+        // Negative indices should error (since we use usize)
+        "[1, 2, 3][-1];",
+    ];
+
+    for input in tests {
+        let lexer = Lexer::new(input);
+        let mut parser = Parser::new(lexer);
+        let program = parser.parse_program();
+        let mut evaluator = Evaluator::new();
+        let mut env = Environment::new();
+
+        let result = evaluator.eval(&program, &mut env);
+        assert!(result.is_err(), "Expected error for input: {}", input);
+    }
+}
+
+#[test]
 fn factorial_function() {
     let input = r#"
         def factorial(n) {

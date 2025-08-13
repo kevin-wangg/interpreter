@@ -1,8 +1,8 @@
 #[cfg(test)]
 use crate::ast::{
-    BooleanLiteral, CallExpression, ExpressionStatement, FunctionLiteral, Identifier, IfExpression,
-    InfixExpression, IntegerLiteral, LetStatement, Node, NullLiteral, PrefixExpression,
-    ReturnStatement,
+    ArrayExpression, BooleanLiteral, CallExpression, ExpressionStatement, FunctionLiteral,
+    Identifier, IfExpression, InfixExpression, IntegerLiteral, LetStatement, Node, NullLiteral,
+    PrefixExpression, ReturnStatement,
 };
 #[cfg(test)]
 use crate::lexer::Lexer;
@@ -442,6 +442,47 @@ fn call_expression() {
     assert_eq!(call_expression.arguments[0].string(), "1");
     assert_eq!(call_expression.arguments[1].string(), "(2 * 3)");
     assert_eq!(call_expression.arguments[2].string(), "(4 + 5)");
+}
+
+#[test]
+fn test_array_expressions() {
+    let tests = vec![
+        ("[1, 2, 3];", vec!["1", "2", "3"]),
+        ("[true, false];", vec!["true", "false"]),
+        ("[1, true, null];", vec!["1", "true", "null"]),
+        ("[];", vec![]),
+        (
+            "[1 + 2, 3 * 4, 5 - 6];",
+            vec!["(1 + 2)", "(3 * 4)", "(5 - 6)"],
+        ),
+        ("[x, y, z];", vec!["x", "y", "z"]),
+        ("[fun(x) { x }, 42];", vec!["fun(x) { x; }", "42"]),
+    ];
+
+    for (input, expected_items) in tests {
+        let lexer = Lexer::new(input);
+        let mut parser = Parser::new(lexer);
+        let program = parser.parse_program();
+        assert!(!has_parser_errors(&parser));
+        assert_eq!(program.statements.len(), 1);
+        let statement = &program.statements[0];
+        let expression_statement = statement
+            .as_any()
+            .downcast_ref::<ExpressionStatement>()
+            .expect("Expected expression statement");
+
+        let array_expression = expression_statement
+            .expression
+            .as_any()
+            .downcast_ref::<ArrayExpression>()
+            .expect("Expected array expression");
+
+        assert_eq!(array_expression.items.len(), expected_items.len());
+
+        for (i, expected_item) in expected_items.iter().enumerate() {
+            assert_eq!(array_expression.items[i].string(), *expected_item);
+        }
+    }
 }
 
 #[cfg(test)]

@@ -5,12 +5,13 @@ mod tests;
 use std::any::Any;
 
 use crate::ast::{
-    BlockStatement, BooleanLiteral, CallExpression, DefStatement, Expression, ExpressionStatement,
-    FunctionLiteral, Identifier, IfExpression, InfixExpression, IntegerLiteral, LetStatement, Node,
-    NullLiteral, PrefixExpression, Program, ReturnStatement, Statement,
+    ArrayExpression, BlockStatement, BooleanLiteral, CallExpression, DefStatement, Expression,
+    ExpressionStatement, FunctionLiteral, Identifier, IfExpression, InfixExpression,
+    IntegerLiteral, LetStatement, Node, NullLiteral, PrefixExpression, Program, ReturnStatement,
+    Statement,
 };
 use crate::evaluator::environment::Environment;
-use crate::object::{Boolean, Function, Integer, Null, Object, ReturnValue};
+use crate::object::{Array, Boolean, Function, Integer, Null, Object, ReturnValue};
 
 #[derive(Debug)]
 pub struct EvaluatorError {
@@ -70,6 +71,8 @@ impl Evaluator {
             self.eval_infix_expression(infix_expression, env)
         } else if let Some(if_expression) = node.as_any().downcast_ref::<IfExpression>() {
             self.eval_if_expression(if_expression, env)
+        } else if let Some(array_expression) = node.as_any().downcast_ref::<ArrayExpression>() {
+            self.eval_array_expression(array_expression, env)
         } else if let Some(block_statement) = node.as_any().downcast_ref::<BlockStatement>() {
             let mut wrapped_env = Environment::new_wrapped(&env);
             self.eval_block_statement(&block_statement.statements, &mut wrapped_env, false)
@@ -350,6 +353,19 @@ impl Evaluator {
             // If the if_expression has no else branch and the condition is falsey, then it evaluates to null
             Ok(Box::new(Null::new()))
         }
+    }
+
+    fn eval_array_expression(
+        &mut self,
+        array_expression: &ArrayExpression,
+        env: &mut Environment,
+    ) -> Result<Box<dyn Object>, EvaluatorError> {
+        let mut items = Vec::new();
+        for item in &array_expression.items {
+            let item_object = self.eval(item.as_ref(), env)?;
+            items.push(item_object);
+        }
+        Ok(Box::new(Array::new(items)))
     }
 
     fn eval_bang_expression(

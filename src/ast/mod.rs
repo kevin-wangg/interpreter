@@ -611,3 +611,41 @@ impl Node for CallExpression {
 impl Expression for CallExpression {}
 
 // ========== Call expression End ==========
+
+// ========== Array expression Start ==========
+
+#[derive(Clone)]
+pub struct ArrayExpression {
+    pub token: Token,
+    pub items: Vec<Box<dyn Expression>>,
+}
+
+impl ArrayExpression {
+    pub fn new(token: Token, items: Vec<Box<dyn Expression>>) -> Self {
+        Self { token, items }
+    }
+}
+
+impl Node for ArrayExpression {
+    fn token_literal(&self) -> String {
+        self.token.literal.clone()
+    }
+
+    fn as_any(&self) -> &dyn Any {
+        self
+    }
+
+    fn string(&self) -> String {
+        let items = self
+            .items
+            .iter()
+            .map(|item| item.string())
+            .collect::<Vec<String>>()
+            .join(", ");
+        format!("[{items}]")
+    }
+}
+
+impl Expression for ArrayExpression {}
+
+// ========== Array expression End ==========

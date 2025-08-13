@@ -3,9 +3,9 @@ mod tests;
 use std::collections::HashMap;
 
 use crate::ast::{
-    BlockStatement, BooleanLiteral, CallExpression, DefStatement, Expression, ExpressionStatement,
-    FunctionLiteral, IfExpression, InfixExpression, IntegerLiteral, NullLiteral, PrefixExpression,
-    ReturnStatement,
+    ArrayExpression, BlockStatement, BooleanLiteral, CallExpression, DefStatement, Expression,
+    ExpressionStatement, FunctionLiteral, IfExpression, InfixExpression, IntegerLiteral,
+    NullLiteral, PrefixExpression, ReturnStatement,
 };
 
 type PrefixParseFn = fn(&mut Parser) -> Option<Box<dyn Expression>>;
@@ -55,7 +55,8 @@ impl Parser {
         parser.register_prefix_function(TokenType::LParen, |parser| {
             parser.parse_grouped_expression()
         });
-        parser.register_prefix_function(TokenType::LSquare, |parser| parser.parse_array_expression());
+        parser
+            .register_prefix_function(TokenType::LSquare, |parser| parser.parse_array_expression());
         parser.register_prefix_function(TokenType::If, |parser| parser.parse_if_expression());
         parser.register_prefix_function(TokenType::Function, |parser| {
             parser.parse_function_literal()
@@ -264,7 +265,8 @@ impl Parser {
 
     /// Parses an expression and returns an AST node representing that expression.
     /// This function consumes tokens up to and including the last token in the expression.
-    /// Namely, it does NOT consume the semicolon (or comma) following an expression.
+    /// Namely, it does NOT consume the semicolon (or comma) following an expression, so cur_token
+    /// is pointing to the last token that is part of the expression when the function returns.
     fn parse_expression(&mut self, precedence: i32) -> Option<Box<dyn Expression>> {
         let prefix_function =
             if let Some(f) = self.prefix_parse_functions.get(&self.cur_token.token_type) {
@@ -504,8 +506,35 @@ impl Parser {
 
     // When this function is called, cur_token should point to LSquare.
     // When it returns, cur_token should point to RSquare
-    fn parse_array_expression(&self) -> Option<Box<dyn Expression>> {
-        todo!()
+    fn parse_array_expression(&mut self) -> Option<Box<dyn Expression>> {
+        // cur_token points to the LSquare here
+        let token = if self.cur_token.token_type == TokenType::LSquare {
+            self.cur_token.clone()
+        } else {
+            return None;
+        };
+        let mut items = Vec::new();
+        if !self.expect_peek(TokenType::RSquare) {
+            self.next_token();
+            loop {
+                // Parse the item, which should be an expression
+                let item = self.parse_expression(Precedence::Lowest as i32)?;
+                items.push(item);
+                // If the next token is RSquare, then break out of the loop
+                if self.expect_peek(TokenType::RSquare) {
+                    break;
+                }
+                // Otherwise, we expect a comma after the item. If there isn't, then add a Parser
+                // error and break out of the loop
+                if !self.expect_peek(TokenType::Comma) {
+                    self.expect_error(TokenType::Comma);
+                    return None;
+                }
+                self.next_token();
+            }
+        }
+        // cur_token points to the RSqaure here
+        Some(Box::new(ArrayExpression::new(token, items)))
     }
 
     fn no_prefix_function_error(&mut self, token_type: TokenType) {

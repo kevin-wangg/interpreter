@@ -62,6 +62,34 @@ impl Boolean {
 
 // ========== Boolean End ==========
 
+// ========== Array Start ==========
+#[derive(Clone)]
+pub struct Array {
+    pub items: Vec<Box<dyn Object>>,
+}
+
+impl Object for Array {
+    fn as_any(&self) -> &dyn Any {
+        self
+    }
+
+    fn inspect(&self) -> String {
+        let items_string = self
+            .items
+            .iter()
+            .map(|item| item.inspect())
+            .collect::<Vec<String>>()
+            .join(", ");
+        format!("[{items_string}]")
+    }
+}
+
+impl Array {
+    pub fn new(items: Vec<Box<dyn Object>>) -> Self {
+        Self { items }
+    }
+}
+
 // ========== Null Start ==========
 
 #[derive(Clone)]

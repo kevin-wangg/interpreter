@@ -1,7 +1,7 @@
 #[cfg(test)]
 use crate::ast::{
     ArrayExpression, BooleanLiteral, CallExpression, ExpressionStatement, FunctionLiteral,
-    Identifier, IfExpression, InfixExpression, IntegerLiteral, LetStatement, Node, NullLiteral,
+    Identifier, IfExpression, IndexExpression, InfixExpression, IntegerLiteral, LetStatement, Node, NullLiteral,
     PrefixExpression, ReturnStatement,
 };
 #[cfg(test)]
@@ -482,6 +482,59 @@ fn test_array_expressions() {
         for (i, expected_item) in expected_items.iter().enumerate() {
             assert_eq!(array_expression.items[i].string(), *expected_item);
         }
+    }
+}
+
+#[test]
+fn index_expressions() {
+    let tests = vec![
+        // Basic array indexing with integer literals
+        ("arr[0];", "arr", "0"),
+        ("myArray[1];", "myArray", "1"),
+        ("numbers[5];", "numbers", "5"),
+        ("data[10];", "data", "10"),
+        // Variable as index
+        ("arr[i];", "arr", "i"),
+        ("data[index];", "data", "index"),
+        // Expression as index
+        ("arr[1 + 2];", "arr", "(1 + 2)"),
+        ("items[i * 2];", "items", "(i * 2)"),
+        ("list[len - 1];", "list", "(len - 1)"),
+        ("matrix[x + y];", "matrix", "(x + y)"),
+        // Array expression with various indices
+        ("[1, 2, 3][0];", "[1, 2, 3]", "0"),
+        ("[true, false][1];", "[true, false]", "1"),
+        ("[a, b, c][i];", "[a, b, c]", "i"),
+        ("[1, 2, 3][x + 1];", "[1, 2, 3]", "(x + 1)"),
+        // Complex expressions as collection
+        ("getArray()[0];", "getArray()", "0"),
+        ("getArray()[i];", "getArray()", "i"),
+        ("(a + b)[x];", "(a + b)", "x"),
+        ("(func())[index];", "func()", "index"),
+    ];
+
+    for (input, expected_collection, expected_index) in tests {
+        let lexer = Lexer::new(input);
+        let mut parser = Parser::new(lexer);
+        let program = parser.parse_program();
+        assert!(!has_parser_errors(&parser));
+        assert_eq!(program.statements.len(), 1);
+
+        let statement = &program.statements[0];
+        let expression_statement = statement
+            .as_any()
+            .downcast_ref::<ExpressionStatement>()
+            .expect("Expected expression statement");
+
+        let index_expression = expression_statement
+            .expression
+            .as_any()
+            .downcast_ref::<IndexExpression>()
+            .expect("Expected index expression");
+
+        assert_eq!(index_expression.collection.string(), expected_collection);
+        assert_eq!(index_expression.index.string(), expected_index);
+        assert_eq!(index_expression.token_literal(), "[");
     }
 }
 

@@ -612,6 +612,49 @@ impl Expression for CallExpression {}
 
 // ========== Call expression End ==========
 
+// ========== Index expression Start ==========
+
+#[derive(Clone)]
+pub struct IndexExpression {
+    pub token: Token,
+    // Even though the type allows any Expression here, this should only be an array expression or
+    // a map expression (if I ever add map expressions)
+    pub collection: Box<dyn Expression>,
+    // Even though the type allows any Expression here, this should only be an integer (for array
+    // indexing) or a string (for map indexing)
+    pub index: Box<dyn Expression>,
+}
+
+impl IndexExpression {
+    pub fn new(token: Token, collection: Box<dyn Expression>, index: Box<dyn Expression>) -> Self {
+        Self {
+            token,
+            collection,
+            index,
+        }
+    }
+}
+
+impl Node for IndexExpression {
+    fn token_literal(&self) -> String {
+        self.token.literal.clone()
+    }
+
+    fn as_any(&self) -> &dyn Any {
+        self
+    }
+
+    fn string(&self) -> String {
+        let array_string = self.collection.string();
+        let index_string = self.index.string();
+        format!("{}[{}]", array_string, index_string)
+    }
+}
+
+impl Expression for IndexExpression {}
+
+// ========== Index expression End ==========
+
 // ========== Array expression Start ==========
 
 #[derive(Clone)]

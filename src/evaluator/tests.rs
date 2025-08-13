@@ -5,7 +5,7 @@ use crate::evaluator::environment::Environment;
 #[cfg(test)]
 use crate::lexer::Lexer;
 #[cfg(test)]
-use crate::object::{Boolean, Integer, Null, Object};
+use crate::object::{Array, Boolean, Integer, Null, Object};
 #[cfg(test)]
 use crate::parser::Parser;
 
@@ -373,6 +373,15 @@ fn test_null_object(obj: &Box<dyn Object>) {
     }
 }
 
+#[cfg(test)]
+fn test_array_object(obj: &Box<dyn Object>, expected: &str) {
+    if let Some(array) = obj.as_any().downcast_ref::<Array>() {
+        assert_eq!(array.inspect(), expected, "Array value mismatch");
+    } else {
+        panic!("Expected Array object, got different type");
+    }
+}
+
 #[test]
 fn factorial_function() {
     let input = r#"
@@ -405,4 +414,28 @@ fn fibonacci_function() {
 
     let evaluated = test_eval(input);
     test_integer_object(&evaluated, 21);
+}
+
+#[test]
+fn array_literal_evaluation() {
+    let tests = vec![
+        // Empty array
+        ("[];", "[]"),
+        // Single element arrays
+        ("[1];", "[1]"),
+        ("[true];", "[true]"),
+        ("[null];", "[null]"),
+        // Multiple element arrays
+        ("[1, 2, 3];", "[1, 2, 3]"),
+        ("[1, true, null];", "[1, true, null]"),
+        // Arrays with expressions
+        ("[1 + 1, 2 * 3, 4 / 2];", "[2, 6, 2]"),
+        ("[-1, -2, -3];", "[-1, -2, -3]"),
+        ("[1 > 2, 2 > 1];", "[false, true]"),
+    ];
+
+    for (input, expected) in tests {
+        let evaluated = test_eval(input);
+        test_array_object(&evaluated, expected);
+    }
 }

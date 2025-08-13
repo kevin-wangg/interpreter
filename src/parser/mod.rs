@@ -3,9 +3,7 @@ mod tests;
 use std::collections::HashMap;
 
 use crate::ast::{
-    ArrayExpression, BlockStatement, BooleanLiteral, CallExpression, DefStatement, Expression,
-    ExpressionStatement, FunctionLiteral, IfExpression, InfixExpression, IntegerLiteral,
-    NullLiteral, PrefixExpression, ReturnStatement,
+    ArrayExpression, BlockStatement, BooleanLiteral, CallExpression, DefStatement, Expression, ExpressionStatement, FunctionLiteral, IfExpression, IndexExpression, InfixExpression, IntegerLiteral, NullLiteral, PrefixExpression, ReturnStatement
 };
 
 type PrefixParseFn = fn(&mut Parser) -> Option<Box<dyn Expression>>;
@@ -95,6 +93,9 @@ impl Parser {
         });
         parser.register_infix_function(TokenType::LParen, |parser, left| {
             parser.parse_call_expression(left)
+        });
+        parser.register_infix_function(TokenType::LSquare, |parser, left| {
+            parser.parse_index_expression(left)
         });
         parser
     }
@@ -372,6 +373,22 @@ impl Parser {
         Some(Box::new(CallExpression::new(token, left, arguments)))
     }
 
+    fn parse_index_expression(&mut self, left: Box<dyn Expression>) -> Option<Box<dyn Expression>> {
+        let token = if self.cur_token.token_type == TokenType::LSquare {
+            self.cur_token.clone()
+        } else {
+            return None;
+        };
+        // Advance cur_token so it points to the first token of the index value
+        self.next_token();
+        let index = self.parse_expression(Precedence::Lowest as i32)?;
+        if !self.expect_peek(TokenType::RSquare) {
+            self.expect_error(TokenType::RSquare);
+            return None;
+        }
+        Some(Box::new(IndexExpression::new(token, left, index)))
+    }
+
     fn parse_grouped_expression(&mut self) -> Option<Box<dyn Expression>> {
         self.next_token();
         let expression = self.parse_expression(Precedence::Lowest as i32)?;
@@ -556,6 +573,7 @@ impl Parser {
             TokenType::Minus => Precedence::Sum,
             TokenType::Star => Precedence::Product,
             TokenType::Slash => Precedence::Product,
+            TokenType::LSquare => Precedence::Call,
             TokenType::LParen => Precedence::Call,
             _ => Precedence::Lowest,
         }

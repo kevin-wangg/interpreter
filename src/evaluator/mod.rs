@@ -6,9 +6,9 @@ use std::any::Any;
 
 use crate::ast::{
     ArrayExpression, BlockStatement, BooleanLiteral, CallExpression, DefStatement, Expression,
-    ExpressionStatement, FunctionLiteral, Identifier, IfExpression, InfixExpression,
-    IntegerLiteral, LetStatement, Node, NullLiteral, PrefixExpression, Program, ReturnStatement,
-    Statement,
+    ExpressionStatement, FunctionLiteral, Identifier, IfExpression, IndexExpression,
+    InfixExpression, IntegerLiteral, LetStatement, Node, NullLiteral, PrefixExpression, Program,
+    ReturnStatement, Statement,
 };
 use crate::evaluator::environment::Environment;
 use crate::object::{Array, Boolean, Function, Integer, Null, Object, ReturnValue};
@@ -63,6 +63,8 @@ impl Evaluator {
                     identifier.value
                 ))),
             }
+        } else if let Some(index_expression) = node.as_any().downcast_ref::<IndexExpression>() {
+            self.eval_index_expression(index_expression, env)
         } else if let Some(call_expression) = node.as_any().downcast_ref::<CallExpression>() {
             self.eval_call_expression(call_expression, env)
         } else if let Some(prefix_expression) = node.as_any().downcast_ref::<PrefixExpression>() {
@@ -122,6 +124,37 @@ impl Evaluator {
             }
         }
         Ok(ret)
+    }
+
+    fn eval_index_expression(
+        &mut self,
+        index_expression: &IndexExpression,
+        env: &mut Environment,
+    ) -> Result<Box<dyn Object>, EvaluatorError> {
+        let index = self.eval(index_expression.index.as_ref(), env)?;
+        if let Some(index) = index.as_any().downcast_ref::<Integer>() {
+            let collection = self.eval(index_expression.collection.as_ref(), env)?;
+            if let Some(collection) = collection.as_any().downcast_ref::<Array>() {
+                let index = index.value as usize;
+                if index >= collection.items.len() {
+                    Err(EvaluatorError::new(&format!(
+                        "Out of bounds array access. Index is {} but array length is {}",
+                        index,
+                        collection.items.len()
+                    )))
+                } else {
+                    Ok(collection.items[index].clone())
+                }
+            } else {
+                Err(EvaluatorError::new(
+                    "Expected collection to be an array when the index is an integer literal",
+                ))
+            }
+        } else {
+            Err(EvaluatorError::new(
+                "Expected index to be an integer literal",
+            ))
+        }
     }
 
     fn eval_call_expression(

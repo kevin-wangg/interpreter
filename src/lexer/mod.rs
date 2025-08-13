@@ -41,6 +41,8 @@ impl Lexer {
             ')' => Token::new(TokenType::RParen, ")"),
             '{' => Token::new(TokenType::LBrace, "{"),
             '}' => Token::new(TokenType::RBrace, "}"),
+            '[' => Token::new(TokenType::LSquare, "["),
+            ']' => Token::new(TokenType::RSquare, "]"),
             ',' => Token::new(TokenType::Comma, ","),
             ';' => Token::new(TokenType::Semicolon, ";"),
             '!' => {

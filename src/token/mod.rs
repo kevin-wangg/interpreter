@@ -12,6 +12,8 @@ pub enum TokenType {
     RParen,
     LBrace,
     RBrace,
+    LSquare,
+    RSquare,
     Function,
     Let,
     Bang,

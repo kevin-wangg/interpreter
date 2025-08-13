@@ -6,9 +6,8 @@ let result = x + y;
 def factorial(n) {
 	if (n == 1) {
 		return 1;
-	} else {
-		return n * factorial(n - 1);
 	}
+	return n * factorial(n - 1);
 }
 
 def fib(n) {
@@ -24,5 +23,5 @@ def fib(n) {
 	}
 }
 
-factorial(result)
-fib(result)
+# Should return 797681364480000
+factorial(result) * fib(result)

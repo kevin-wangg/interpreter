@@ -55,6 +55,7 @@ impl Parser {
         parser.register_prefix_function(TokenType::LParen, |parser| {
             parser.parse_grouped_expression()
         });
+        parser.register_prefix_function(TokenType::LSquare, |parser| parser.parse_array_expression());
         parser.register_prefix_function(TokenType::If, |parser| parser.parse_if_expression());
         parser.register_prefix_function(TokenType::Function, |parser| {
             parser.parse_function_literal()
@@ -499,6 +500,12 @@ impl Parser {
         }
         // cur_token points to the RParen here
         Some(ret)
+    }
+
+    // When this function is called, cur_token should point to LSquare.
+    // When it returns, cur_token should point to RSquare
+    fn parse_array_expression(&self) -> Option<Box<dyn Expression>> {
+        todo!()
     }
 
     fn no_prefix_function_error(&mut self, token_type: TokenType) {

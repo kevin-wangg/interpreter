@@ -3,6 +3,7 @@ pub mod environment;
 mod tests;
 
 use std::any::Any;
+use std::collections::HashMap;
 
 use crate::ast::{
     ArrayExpression, BlockStatement, BooleanLiteral, CallExpression, DefStatement, Expression,
@@ -26,11 +27,38 @@ impl EvaluatorError {
     }
 }
 
-pub struct Evaluator {}
+pub struct Evaluator {
+    builtin_fns: HashMap<
+        String,
+        Box<dyn Fn(Vec<Box<dyn Object>>) -> Result<Box<dyn Object>, EvaluatorError>>,
+    >,
+}
 
 impl Evaluator {
     pub fn new() -> Self {
-        Self {}
+        let mut builtin_fns: HashMap<
+            String,
+            Box<dyn Fn(Vec<Box<dyn Object>>) -> Result<Box<dyn Object>, EvaluatorError>>,
+        > = HashMap::new();
+
+        builtin_fns.insert(
+            "len".to_string(),
+            Box::new(|args| {
+                if args.len() != 1 {
+                    Err(EvaluatorError::new(
+                        "Builtin function len expects exactly one argument",
+                    ))
+                } else if let Some(array_expression) = args[0].as_any().downcast_ref::<Array>() {
+                    Ok(Box::new(Integer::new(array_expression.items.len() as i64)))
+                } else {
+                    Err(EvaluatorError::new(
+                        "Builtin function len expects array argument",
+                    ))
+                }
+            }),
+        );
+
+        Self { builtin_fns }
     }
 
     pub fn eval<T: Node + ?Sized>(
@@ -199,6 +227,9 @@ impl Evaluator {
                         identifier.value
                     )))
                 }
+            } else if let Some(builtin_fn) = self.builtin_fns.get(&identifier.value) {
+                // Check for builtin functions here
+                builtin_fn(arguments)
             } else {
                 Err(EvaluatorError::new(&format!(
                     "Unknown identifier: {}",

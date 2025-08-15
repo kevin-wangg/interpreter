@@ -76,19 +76,24 @@ impl Lexer {
             c => {
                 let token = if c.is_alphabetic() || Self::is_underscore(c) {
                     let word = self.read_word();
+                    // Unread a character here because the functions used here (`read_word`, `read_number`)
+                    // reads until the first character NOT in the literal. Then the `read_char` call below
+                    // would then skip this character entirely, so we add a `unread_char` call here to
+                    // not skip it.
+                    self.unread_char();
                     let token_type = Self::lookup_ident(&word);
                     Token::new(token_type, &word)
                 } else if c.is_numeric() {
                     let number = self.read_number();
+                    // Unread a character here because the functions used here (`read_word`, `read_number`)
+                    // reads until the first character NOT in the literal. Then the `read_char` call below
+                    // would then skip this character entirely, so we add a `unread_char` call here to
+                    // not skip it.
+                    self.unread_char();
                     Token::new(TokenType::Int, &number)
                 } else {
                     Token::new(TokenType::Illegal, &c.to_string())
                 };
-                // Unread a character here because the functions used here (`read_word`, `read_number`)
-                // reads until the first character NOT in the literal. Then the `read_char` call below
-                // would then skip this character entirely, so we add a `unread_char` call here to
-                // not skip it.
-                self.unread_char();
                 token
             }
         };

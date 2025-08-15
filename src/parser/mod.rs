@@ -3,7 +3,9 @@ mod tests;
 use std::collections::HashMap;
 
 use crate::ast::{
-    ArrayExpression, BlockStatement, BooleanLiteral, CallExpression, DefStatement, Expression, ExpressionStatement, FunctionLiteral, IfExpression, IndexExpression, InfixExpression, IntegerLiteral, NullLiteral, PrefixExpression, ReturnStatement
+    ArrayExpression, BlockStatement, BooleanLiteral, CallExpression, DefStatement, Expression,
+    ExpressionStatement, FunctionLiteral, IfExpression, IndexExpression, InfixExpression,
+    IntegerLiteral, NullLiteral, PrefixExpression, ReturnStatement,
 };
 
 type PrefixParseFn = fn(&mut Parser) -> Option<Box<dyn Expression>>;

@@ -1,8 +1,8 @@
 #[cfg(test)]
 use crate::ast::{
     ArrayExpression, BooleanLiteral, CallExpression, ExpressionStatement, FunctionLiteral,
-    Identifier, IfExpression, IndexExpression, InfixExpression, IntegerLiteral, LetStatement, Node, NullLiteral,
-    PrefixExpression, ReturnStatement,
+    Identifier, IfExpression, IndexExpression, InfixExpression, IntegerLiteral, LetStatement, Node,
+    NullLiteral, PrefixExpression, ReturnStatement,
 };
 #[cfg(test)]
 use crate::lexer::Lexer;

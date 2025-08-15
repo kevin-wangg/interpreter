@@ -4,6 +4,7 @@ mod tests;
 
 use std::any::Any;
 use std::collections::HashMap;
+use std::rc::Rc;
 
 use crate::ast::{
     ArrayExpression, BlockStatement, BooleanLiteral, CallExpression, DefStatement, Expression,
@@ -12,7 +13,7 @@ use crate::ast::{
     ReturnStatement, Statement,
 };
 use crate::evaluator::environment::Environment;
-use crate::object::{Array, Boolean, Function, Integer, Null, Object, ReturnValue};
+use crate::object::{Array, Boolean, BuiltinFn, Function, Integer, Null, Object, ReturnValue};
 
 #[derive(Debug)]
 pub struct EvaluatorError {
@@ -28,22 +29,16 @@ impl EvaluatorError {
 }
 
 pub struct Evaluator {
-    builtin_fns: HashMap<
-        String,
-        Box<dyn Fn(Vec<Box<dyn Object>>) -> Result<Box<dyn Object>, EvaluatorError>>,
-    >,
+    builtin_fns: HashMap<String, Box<dyn Object>>,
 }
 
 impl Evaluator {
     pub fn new() -> Self {
-        let mut builtin_fns: HashMap<
-            String,
-            Box<dyn Fn(Vec<Box<dyn Object>>) -> Result<Box<dyn Object>, EvaluatorError>>,
-        > = HashMap::new();
+        let mut builtin_fns: HashMap<String, Box<dyn Object>> = HashMap::new();
 
         builtin_fns.insert(
             "len".to_string(),
-            Box::new(|args| {
+            Box::new(BuiltinFn::new(Rc::new(|args| {
                 if args.len() != 1 {
                     Err(EvaluatorError::new(
                         "Builtin function len expects exactly one argument",
@@ -55,7 +50,7 @@ impl Evaluator {
                         "Builtin function len expects array argument",
                     ))
                 }
-            }),
+            }))),
         );
 
         Self { builtin_fns }
@@ -86,10 +81,13 @@ impl Evaluator {
         } else if let Some(identifier) = node.as_any().downcast_ref::<Identifier>() {
             match env.get(&identifier.value) {
                 Some(value) => Ok(value.clone()),
-                None => Err(EvaluatorError::new(&format!(
-                    "Unknown identifier found: {}",
-                    identifier.value
-                ))),
+                None => match self.builtin_fns.get(&identifier.value) {
+                    Some(value) => Ok(value.clone()),
+                    None => Err(EvaluatorError::new(&format!(
+                        "Unknown identifier found: {}",
+                        identifier.value
+                    ))),
+                },
             }
         } else if let Some(index_expression) = node.as_any().downcast_ref::<IndexExpression>() {
             self.eval_index_expression(index_expression, env)
@@ -227,9 +225,17 @@ impl Evaluator {
                         identifier.value
                     )))
                 }
-            } else if let Some(builtin_fn) = self.builtin_fns.get(&identifier.value) {
+            } else if let Some(value) = self.builtin_fns.get(&identifier.value) {
                 // Check for builtin functions here
-                builtin_fn(arguments)
+                let value: Box<dyn Any> = value.clone();
+                if let Ok(builtin_fn) = value.downcast::<BuiltinFn>() {
+                    let builtin_fn = builtin_fn.builtin_fn;
+                    builtin_fn(arguments)
+                } else {
+                    Err(EvaluatorError::new(
+                        "Unable to downcast to builtin function",
+                    ))
+                }
             } else {
                 Err(EvaluatorError::new(&format!(
                     "Unknown identifier: {}",

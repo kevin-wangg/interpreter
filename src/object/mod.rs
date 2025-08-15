@@ -1,8 +1,10 @@
 use std::any::Any;
+use std::rc::Rc;
 
 use dyn_clone::DynClone;
 
 use crate::ast::{BlockStatement, Identifier, Node};
+use crate::evaluator::EvaluatorError;
 use crate::evaluator::environment::Environment;
 
 pub trait Object: Any + DynClone {
@@ -177,3 +179,30 @@ impl ReturnValue {
 }
 
 // ========== ReturnValue End ==========
+
+// ========== BuiltinFn Start ==========
+
+#[derive(Clone)]
+pub struct BuiltinFn {
+    pub builtin_fn: Rc<dyn Fn(Vec<Box<dyn Object>>) -> Result<Box<dyn Object>, EvaluatorError>>,
+}
+
+impl Object for BuiltinFn {
+    fn as_any(&self) -> &dyn Any {
+        self
+    }
+
+    fn inspect(&self) -> String {
+        "builtin_function_len".to_string()
+    }
+}
+
+impl BuiltinFn {
+    pub fn new(
+        builtin_fn: Rc<dyn Fn(Vec<Box<dyn Object>>) -> Result<Box<dyn Object>, EvaluatorError>>,
+    ) -> Self {
+        Self { builtin_fn }
+    }
+}
+
+// ========== BuiltinFn End ==========

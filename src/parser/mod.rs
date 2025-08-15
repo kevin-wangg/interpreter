@@ -411,15 +411,14 @@ impl Parser {
         } else {
             return None;
         };
-        if !self.expect_peek(TokenType::LParen) {
-            self.expect_error(TokenType::LParen);
-            return None;
+        // Brackets are optional around the if condition
+        if self.peek_token.token_type == TokenType::LParen {
+            self.next_token();
         }
         self.next_token();
         let condition = self.parse_expression(Precedence::Lowest as i32)?;
-        if !self.expect_peek(TokenType::RParen) {
-            self.expect_error(TokenType::RParen);
-            return None;
+        if self.peek_token.token_type == TokenType::RParen {
+            self.next_token();
         }
         if !self.expect_peek(TokenType::LBrace) {
             self.expect_error(TokenType::LBrace);

@@ -35,9 +35,7 @@ fn execute_file(filename: &str) {
     let mut env = Environment::new();
     let mut evaluator = Evaluator::new();
     match evaluator.eval(&program, &mut env) {
-        Ok(value) => {
-            println!("{}", value.inspect());
-        }
+        Ok(_) => {}
         Err(e) => {
             eprintln!("Runtime error: {}", e.error_message);
             process::exit(1);

@@ -36,13 +36,15 @@ impl Evaluator {
     pub fn new() -> Self {
         let mut builtin_fns: HashMap<String, Box<dyn Object>> = HashMap::new();
 
+        // Define builtin functions here.
+        // Monkey Lang supports the following builtin functions:
+        // - len: Returns the length of an input array or string
+        // - print: Prints the input argument to stdout
         builtin_fns.insert(
             "len".to_string(),
             Box::new(BuiltinFn::new(Rc::new(|args| {
                 if args.len() != 1 {
-                    Err(EvaluatorError::new(
-                        "Builtin function len expects exactly one argument",
-                    ))
+                    Err(EvaluatorError::new("len expects exactly one argument"))
                 } else if let Some(array_expression) = args[0].as_any().downcast_ref::<Array>() {
                     Ok(Box::new(Integer::new(array_expression.items.len() as i64)))
                 } else {
@@ -52,7 +54,28 @@ impl Evaluator {
                 }
             }))),
         );
-
+        builtin_fns.insert(
+            "print".to_string(),
+            Box::new(BuiltinFn::new(Rc::new(|args| {
+                if args.len() != 1 {
+                    Err(EvaluatorError::new("print expects exactly one argument"))
+                } else {
+                    print!("{}", args[0].inspect());
+                    Ok(Box::new(Null::new()))
+                }
+            }))),
+        );
+        builtin_fns.insert(
+            "println".to_string(),
+            Box::new(BuiltinFn::new(Rc::new(|args| {
+                if args.len() != 1 {
+                    Err(EvaluatorError::new("print expects exactly one argument"))
+                } else {
+                    println!("{}", args[0].inspect());
+                    Ok(Box::new(Null::new()))
+                }
+            }))),
+        );
         Self { builtin_fns }
     }
 
@@ -188,15 +211,15 @@ impl Evaluator {
         call_expression: &CallExpression,
         env: &mut Environment,
     ) -> Result<Box<dyn Object>, EvaluatorError> {
-        let arguments = call_expression
-            .arguments
-            .iter()
-            .map(|arg| {
-                // I used .expect here because I am lazy
-                self.eval(arg.as_ref(), env)
-                    .expect("Error evaluating argument")
-            })
-            .collect::<Vec<_>>();
+        let mut arguments = Vec::new();
+        // Evaluate the call expression arguments. If any of them return an error, immediately
+        // return from this function with that error.
+        for arg in &call_expression.arguments {
+            match self.eval(arg.as_ref(), env) {
+                Ok(arg) => arguments.push(arg),
+                Err(e) => return Err(e),
+            }
+        }
         if let Some(function_literal) = call_expression
             .function
             .as_any()

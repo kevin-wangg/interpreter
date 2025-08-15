@@ -23,5 +23,7 @@ def fib(n) {
 	}
 }
 
+println(123)
+
 # Should return 797681364480000
-factorial(result) * fib(result)
+println(factorial(result) * fib(result))

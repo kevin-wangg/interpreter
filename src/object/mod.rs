@@ -193,7 +193,7 @@ impl Object for BuiltinFn {
     }
 
     fn inspect(&self) -> String {
-        "builtin_function_len".to_string()
+        "builtin_function".to_string()
     }
 }
 

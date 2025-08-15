@@ -22,8 +22,8 @@ fn let_statements() {
     let lexer = Lexer::new(input);
     let mut parser = Parser::new(lexer);
 
-    let expected_identifier_literals = vec!["x", "y", "foobar"];
-    let expected_values = vec!["5", "10", "82388"];
+    let expected_identifier_literals = ["x", "y", "foobar"];
+    let expected_values = ["5", "10", "82388"];
     let program = parser.parse_program();
     assert!(!has_parser_errors(&parser));
     assert!(program.statements.len() == 3);
@@ -48,7 +48,7 @@ fn return_statements() {
         return 10;
         return foo;
     ";
-    let expected_values = vec!["10", "foo"];
+    let expected_values = ["10", "foo"];
     let lexer = Lexer::new(input);
     let mut parser = Parser::new(lexer);
     let program = parser.parse_program();
@@ -228,7 +228,7 @@ fn boolean_literal_expression() {
         .as_any()
         .downcast_ref::<BooleanLiteral>()
         .expect("Expected boolean literal expression");
-    assert_eq!(integer_literal.value, false);
+    assert!(!integer_literal.value);
     assert_eq!(integer_literal.token_literal(), "false");
 }
 
@@ -284,7 +284,7 @@ fn bang_expression() {
         .downcast_ref::<BooleanLiteral>()
         .expect("Expected boolean literal as right operand");
 
-    assert_eq!(right_operand.value, true);
+    assert!(right_operand.value);
     assert_eq!(right_operand.token_literal(), "true");
 }
 
@@ -411,7 +411,7 @@ fn operator_precedence() {
             .downcast_ref::<ExpressionStatement>()
             .expect("Expected expression statement");
         let actual = expression_statement.expression.string();
-        assert_eq!(actual, expected, "Input: {}", input);
+        assert_eq!(actual, expected, "Input: {input}");
     }
 }
 

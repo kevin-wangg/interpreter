@@ -72,7 +72,7 @@ impl Evaluator {
         } else if node.as_any().is::<NullLiteral>() {
             Ok(Box::new(Null::new()))
         } else if let Some(function_literal) = node.as_any().downcast_ref::<FunctionLiteral>() {
-            let function_env = Environment::new_wrapped(&env);
+            let function_env = Environment::new_wrapped(env);
             Ok(Box::new(Function::new(
                 &function_literal.parameters,
                 function_literal.body.clone(),
@@ -102,7 +102,7 @@ impl Evaluator {
         } else if let Some(array_expression) = node.as_any().downcast_ref::<ArrayExpression>() {
             self.eval_array_expression(array_expression, env)
         } else if let Some(block_statement) = node.as_any().downcast_ref::<BlockStatement>() {
-            let mut wrapped_env = Environment::new_wrapped(&env);
+            let mut wrapped_env = Environment::new_wrapped(env);
             self.eval_block_statement(&block_statement.statements, &mut wrapped_env, false)
         } else if let Some(return_statement) = node.as_any().downcast_ref::<ReturnStatement>() {
             self.eval_return_statement(return_statement, env)
@@ -218,7 +218,7 @@ impl Evaluator {
             if let Some(value) = env.get(&identifier.value) {
                 let value: Box<dyn Any> = value.clone();
                 if let Ok(function) = value.downcast::<Function>() {
-                    self.apply_function(function, arguments, Some(&identifier))
+                    self.apply_function(function, arguments, Some(identifier))
                 } else {
                     Err(EvaluatorError::new(&format!(
                         "Expected function literal in call expression. {} is not a function literal",

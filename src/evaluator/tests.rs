@@ -200,7 +200,7 @@ fn unknown_operator_errors() {
         let mut env = Environment::new();
 
         let result = evaluator.eval(&program, &mut env);
-        assert!(result.is_err(), "Expected error for input: {}", input);
+        assert!(result.is_err(), "Expected error for input: {input}");
     }
 }
 
@@ -454,7 +454,7 @@ fn array_index_error_cases() {
         let mut env = Environment::new();
 
         let result = evaluator.eval(&program, &mut env);
-        assert!(result.is_err(), "Expected error for input: {}", input);
+        assert!(result.is_err(), "Expected error for input: {input}");
     }
 }
 

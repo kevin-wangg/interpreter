@@ -18,7 +18,7 @@ fn execute_file(filename: &str) {
     let contents = match fs::read_to_string(filename) {
         Ok(contents) => contents,
         Err(error) => {
-            eprintln!("Error reading file '{}': {}", filename, error);
+            eprintln!("Error reading file '{filename}': {error}");
             process::exit(1);
         }
     };
@@ -28,7 +28,7 @@ fn execute_file(filename: &str) {
     let program = parser.parse_program();
 
     if has_parser_errors(&parser) {
-        eprintln!("Parser errors found in file '{}'", filename);
+        eprintln!("Parser errors found in file '{filename}'");
         process::exit(1);
     }
 
@@ -79,7 +79,7 @@ fn run_repl() {
                 }
             }
             Err(error) => {
-                eprintln!("Error reading input: {}", error);
+                eprintln!("Error reading input: {error}");
                 break;
             }
         }

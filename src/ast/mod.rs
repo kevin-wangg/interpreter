@@ -513,7 +513,7 @@ impl Node for BlockStatement {
             .map(|statement| statement.string())
             .collect::<Vec<String>>()
             .join(" ");
-        format!("{{ {} }}", statements)
+        format!("{{ {statements} }}")
     }
 }
 
@@ -647,7 +647,7 @@ impl Node for IndexExpression {
     fn string(&self) -> String {
         let array_string = self.collection.string();
         let index_string = self.index.string();
-        format!("{}[{}]", array_string, index_string)
+        format!("{array_string}[{index_string}]")
     }
 }
 

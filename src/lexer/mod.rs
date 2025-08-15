@@ -74,7 +74,8 @@ impl Lexer {
             }
             '\0' => Token::new(TokenType::Eof, ""),
             c => {
-                let token = if c.is_alphabetic() || Self::is_underscore(c) {
+                
+                if c.is_alphabetic() || Self::is_underscore(c) {
                     let word = self.read_word();
                     // Unread a character here because the functions used here (`read_word`, `read_number`)
                     // reads until the first character NOT in the literal. Then the `read_char` call below
@@ -93,8 +94,7 @@ impl Lexer {
                     Token::new(TokenType::Int, &number)
                 } else {
                     Token::new(TokenType::Illegal, &c.to_string())
-                };
-                token
+                }
             }
         };
         self.read_char();

@@ -558,8 +558,7 @@ impl Parser {
 
     fn no_prefix_function_error(&mut self, token_type: TokenType) {
         self.errors.push(format!(
-            "No prefix parse function found for {:?} found",
-            token_type
+            "No prefix parse function found for {token_type:?} found"
         ))
     }
 
@@ -631,11 +630,7 @@ impl Parser {
 
     #[allow(dead_code)]
     fn expr_requires_semi_to_be_stmt(&self, statement: &dyn Expression) -> bool {
-        if statement.as_any().is::<IfExpression>() {
-            false
-        } else {
-            true
-        }
+        !statement.as_any().is::<IfExpression>()
     }
 }
 
@@ -644,7 +639,7 @@ pub fn has_parser_errors(parser: &Parser) -> bool {
     if !errors.is_empty() {
         eprintln!("Parser has {} errors(s)", errors.len());
         for error in errors {
-            eprintln!("Parser error: {}", error);
+            eprintln!("Parser error: {error}");
         }
         true
     } else {

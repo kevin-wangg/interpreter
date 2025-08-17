@@ -166,6 +166,7 @@ impl Lexer {
     fn lookup_ident(word: &str) -> TokenType {
         let mut keywords = HashMap::new();
         keywords.insert("let", TokenType::Let);
+        keywords.insert("rec", TokenType::Rec);
         keywords.insert("fun", TokenType::Function);
         keywords.insert("true", TokenType::True);
         keywords.insert("false", TokenType::False);

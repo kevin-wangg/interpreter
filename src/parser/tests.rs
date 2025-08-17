@@ -37,7 +37,38 @@ fn let_statements() {
         assert!(check_let_statement(
             let_statement,
             expected_identifier_literals[i],
-            expected_values[i]
+            expected_values[i],
+            false
+        ))
+    }
+}
+
+#[test]
+fn let_rec_statements() {
+    let input = "
+        let rec foo = fun() { 1 };
+    ";
+
+    let lexer = Lexer::new(input);
+    let mut parser = Parser::new(lexer);
+
+    let expected_identifier_literals = ["foo"];
+    let expected_values = ["fun() { 1; }"];
+    let program = parser.parse_program();
+    assert!(!has_parser_errors(&parser));
+    assert!(program.statements.len() == 1);
+    for i in 0..program.statements.len() {
+        let statement = &program.statements[i];
+        let let_statement = statement
+            .as_any()
+            .downcast_ref::<LetStatement>()
+            .expect("Expected let statement");
+
+        assert!(check_let_statement(
+            let_statement,
+            expected_identifier_literals[i],
+            expected_values[i],
+            true
         ))
     }
 }
@@ -543,10 +574,12 @@ fn check_let_statement(
     let_statement: &LetStatement,
     expected_identifier_literal: &str,
     expected_expression_literal: &str,
+    expected_rec: bool,
 ) -> bool {
     let_statement.token.token_type == TokenType::Let
         && let_statement.name.value == expected_identifier_literal
         && let_statement.value.string() == expected_expression_literal
+        && let_statement.rec == expected_rec
 }
 
 #[cfg(test)]

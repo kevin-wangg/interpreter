@@ -16,6 +16,8 @@ pub enum TokenType {
     RSquare,
     Function,
     Let,
+    // Used in let rec statements
+    Rec,
     Bang,
     Minus,
     Slash,

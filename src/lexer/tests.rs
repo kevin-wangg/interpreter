@@ -9,7 +9,8 @@ fn test_next_token_simple() {
 
     let mut lexer = Lexer::new(input);
 
-    let expected_token_types = [TokenType::Assign,
+    let expected_token_types = [
+        TokenType::Assign,
         TokenType::Plus,
         TokenType::LParen,
         TokenType::RParen,
@@ -17,7 +18,8 @@ fn test_next_token_simple() {
         TokenType::RBrace,
         TokenType::Comma,
         TokenType::Semicolon,
-        TokenType::Eof];
+        TokenType::Eof,
+    ];
 
     // Last literal is empty string because Eof token has an empty string literal
     let expected_token_literals = ["=", "+", "(", ")", "{", "}", ",", ";", ""];
@@ -35,7 +37,8 @@ fn test_next_token_skip_whitespace() {
 
     let mut lexer = Lexer::new(input);
 
-    let expected_token_types = [TokenType::Assign,
+    let expected_token_types = [
+        TokenType::Assign,
         TokenType::Plus,
         TokenType::LParen,
         TokenType::RParen,
@@ -43,7 +46,8 @@ fn test_next_token_skip_whitespace() {
         TokenType::RBrace,
         TokenType::Comma,
         TokenType::Semicolon,
-        TokenType::Eof];
+        TokenType::Eof,
+    ];
 
     let expected_token_literals = ["=", "+", "(", ")", "{", "}", ",", ";", ""];
 
@@ -81,7 +85,8 @@ fn test_next_token_complex() {
 
     let mut lexer = Lexer::new(input);
 
-    let expected_token_types = [TokenType::Let,
+    let expected_token_types = [
+        TokenType::Let,
         TokenType::Ident,
         TokenType::Assign,
         TokenType::Int,
@@ -165,7 +170,8 @@ fn test_next_token_complex() {
         TokenType::False,
         TokenType::Semicolon,
         TokenType::RBrace,
-        TokenType::Eof];
+        TokenType::Eof,
+    ];
 
     let expected_token_literals = vec![
         "let", "five", "=", "5", ";", "let", "ten", "=", "10", ";", "let", "add", "=", "fun", "(",

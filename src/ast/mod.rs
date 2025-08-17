@@ -94,11 +94,17 @@ pub struct LetStatement {
     pub token: Token,
     pub name: Identifier,
     pub value: Box<dyn Expression>,
+    pub rec: bool,
 }
 
 impl LetStatement {
-    pub fn new(token: Token, name: Identifier, value: Box<dyn Expression>) -> Self {
-        LetStatement { token, name, value }
+    pub fn new(token: Token, name: Identifier, value: Box<dyn Expression>, rec: bool) -> Self {
+        LetStatement {
+            token,
+            name,
+            value,
+            rec,
+        }
     }
 }
 
@@ -112,7 +118,19 @@ impl Node for LetStatement {
     }
 
     fn string(&self) -> String {
-        format!("let {} = {};", self.name.string(), self.value.string())
+        if self.rec {
+            format!(
+                "let rec {} = {};",
+                self.name.string(),
+                self.value.string()
+            )
+        } else {
+            format!(
+                "let {} = {};",
+                self.name.string(),
+                self.value.string()
+            )
+        }
     }
 }
 

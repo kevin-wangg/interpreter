@@ -188,6 +188,7 @@ impl Parser {
         } else {
             return None;
         };
+        let rec = self.expect_peek(TokenType::Rec);
         // If the next token is TokenType::Ident, then we advance the token pointers.
         // Then `cur_token` points to the Identifier token.
         let name = if self.expect_peek(TokenType::Ident) {
@@ -212,7 +213,7 @@ impl Parser {
         } else {
             self.next_token();
         }
-        Some(Box::new(LetStatement::new(token, name, value)))
+        Some(Box::new(LetStatement::new(token, name, value, rec)))
     }
 
     // When this function is called, self.cur_token should be pointing to a token with

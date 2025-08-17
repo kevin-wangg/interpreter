@@ -40,6 +40,9 @@ impl Evaluator {
         // Monkey Lang supports the following builtin functions:
         // - len: Returns the length of an input array or string
         // - print: Prints the input argument to stdout
+        // - println: Prints the input argument to stdout, then prints newline character
+        // - push: Expects an array and an object. Returns a new array with the object appended to
+        // the end
         builtin_fns.insert(
             "len".to_string(),
             Box::new(BuiltinFn::new(Rc::new(|args| {
@@ -73,6 +76,20 @@ impl Evaluator {
                 } else {
                     println!("{}", args[0].inspect());
                     Ok(Box::new(Null::new()))
+                }
+            }))),
+        );
+        builtin_fns.insert(
+            "push".to_string(),
+            Box::new(BuiltinFn::new(Rc::new(|args| {
+                if args.len() != 2 {
+                    Err(EvaluatorError::new("push expects exactly two arguments"))
+                } else if let Some(array_expression) = args[0].as_any().downcast_ref::<Array>() {
+                    let mut new_array_items = array_expression.items.clone();
+                    new_array_items.push(args[1].clone());
+                    Ok(Box::new(Array::new(new_array_items)))
+                } else {
+                    Err(EvaluatorError::new("push expects the first argument to be an array"))
                 }
             }))),
         );

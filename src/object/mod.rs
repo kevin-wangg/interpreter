@@ -121,10 +121,7 @@ impl Null {
 pub struct Function {
     pub parameters: Vec<Identifier>,
     pub body: BlockStatement,
-    // When env is None, this means the function is not a closure, ie. it does not
-    // capture its environment. Recursive functions must not be closures in Monkey Lang.
-    // I should probably create a separate struct for this...
-    pub env: Option<Environment>,
+    pub env: Environment,
 }
 
 impl Object for Function {
@@ -144,7 +141,7 @@ impl Object for Function {
 }
 
 impl Function {
-    pub fn new(parameters: &[Identifier], body: BlockStatement, env: Option<Environment>) -> Self {
+    pub fn new(parameters: &[Identifier], body: BlockStatement, env: Environment) -> Self {
         Self {
             parameters: parameters.to_vec(),
             body,
@@ -206,3 +203,22 @@ impl BuiltinFn {
 }
 
 // ========== BuiltinFn End ==========
+
+#[derive(Clone)]
+pub struct SelfRef {}
+
+impl Object for SelfRef {
+    fn as_any(&self) -> &dyn Any {
+        self
+    }
+
+    fn inspect(&self) -> String {
+        "self_ref_obj".to_string()
+    }
+}
+
+impl SelfRef {
+    pub fn new() -> Self {
+        Self {}
+    }
+}

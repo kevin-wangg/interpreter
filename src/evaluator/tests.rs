@@ -461,7 +461,7 @@ fn array_index_error_cases() {
 #[test]
 fn factorial_function() {
     let input = r#"
-        def factorial(n) {
+        let rec factorial = fun(n) {
             if (n <= 1) {
                 return 1;
             } else {
@@ -478,7 +478,7 @@ fn factorial_function() {
 #[test]
 fn fibonacci_function() {
     let input = r#"
-        def fibonacci(n) {
+        let rec fibonacci = fun(n) {
             if (n <= 1) {
                 return n;
             } else {

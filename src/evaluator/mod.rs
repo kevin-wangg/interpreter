@@ -7,13 +7,15 @@ use std::collections::HashMap;
 use std::rc::Rc;
 
 use crate::ast::{
-    ArrayExpression, BlockStatement, BooleanLiteral, CallExpression, DefStatement, Expression,
+    ArrayExpression, BlockStatement, BooleanLiteral, CallExpression, Expression,
     ExpressionStatement, FunctionLiteral, Identifier, IfExpression, IndexExpression,
     InfixExpression, IntegerLiteral, LetStatement, Node, NullLiteral, PrefixExpression, Program,
     ReturnStatement, Statement,
 };
 use crate::evaluator::environment::Environment;
-use crate::object::{Array, Boolean, BuiltinFn, Function, Integer, Null, Object, ReturnValue};
+use crate::object::{
+    Array, Boolean, BuiltinFn, Function, Integer, Null, Object, ReturnValue, SelfRef,
+};
 
 #[derive(Debug)]
 pub struct EvaluatorError {
@@ -30,6 +32,7 @@ impl EvaluatorError {
 
 pub struct Evaluator {
     builtin_fns: HashMap<String, Box<dyn Object>>,
+    self_fn: Option<Box<Function>>,
 }
 
 impl Evaluator {
@@ -89,11 +92,16 @@ impl Evaluator {
                     new_array_items.push(args[1].clone());
                     Ok(Box::new(Array::new(new_array_items)))
                 } else {
-                    Err(EvaluatorError::new("push expects the first argument to be an array"))
+                    Err(EvaluatorError::new(
+                        "push expects the first argument to be an array",
+                    ))
                 }
             }))),
         );
-        Self { builtin_fns }
+        Self {
+            builtin_fns,
+            self_fn: None,
+        }
     }
 
     pub fn eval<T: Node + ?Sized>(
@@ -116,7 +124,7 @@ impl Evaluator {
             Ok(Box::new(Function::new(
                 &function_literal.parameters,
                 function_literal.body.clone(),
-                Some(function_env),
+                function_env,
             )))
         } else if let Some(identifier) = node.as_any().downcast_ref::<Identifier>() {
             match env.get(&identifier.value) {
@@ -148,23 +156,11 @@ impl Evaluator {
             self.eval_return_statement(return_statement, env)
         } else if let Some(let_statement) = node.as_any().downcast_ref::<LetStatement>() {
             self.eval_let_statement(let_statement, env)
-        } else if let Some(def_statement) = node.as_any().downcast_ref::<DefStatement>() {
-            self.eval_def_statement(def_statement, env)
         } else {
             Err(EvaluatorError::new(
                 "Evaluator encountered unknown AST type",
             ))
         }
-    }
-
-    fn eval_def_statement(
-        &mut self,
-        def_statement: &DefStatement,
-        env: &mut Environment,
-    ) -> Result<Box<dyn Object>, EvaluatorError> {
-        let function = Function::new(&def_statement.parameters, def_statement.body.clone(), None);
-        env.insert(&def_statement.name, Box::new(function));
-        Ok(Box::new(Null::new()))
     }
 
     fn eval_block_statement(
@@ -244,7 +240,7 @@ impl Evaluator {
         {
             let function: Box<dyn Any> = self.eval(function_literal, env)?;
             if let Ok(function) = function.downcast::<Function>() {
-                self.apply_function(function, arguments, None)
+                self.apply_function(function, arguments)
             } else {
                 Err(EvaluatorError::new(
                     "Expected function literal to evaluate to function",
@@ -257,8 +253,18 @@ impl Evaluator {
         {
             if let Some(value) = env.get(&identifier.value) {
                 let value: Box<dyn Any> = value.clone();
-                if let Ok(function) = value.downcast::<Function>() {
-                    self.apply_function(function, arguments, Some(identifier))
+                if value.is::<SelfRef>() {
+                    if let Some(self_fn) = self.self_fn.clone() {
+                        self.apply_function(self_fn, arguments)
+                    } else {
+                        Err(EvaluatorError::new("Expected self_fn to be Some when evaluating recursive function"))
+                    }
+                } else if let Ok(function) = value.downcast::<Function>() {
+                    let temp = self.self_fn.clone();
+                    self.self_fn = Some(function.clone());
+                    let ret = self.apply_function(function, arguments);
+                    self.self_fn = temp;
+                    ret
                 } else {
                     Err(EvaluatorError::new(&format!(
                         "Expected function literal in call expression. {} is not a function literal",
@@ -291,9 +297,8 @@ impl Evaluator {
 
     fn apply_function(
         &mut self,
-        function: Box<Function>,
+        mut function: Box<Function>,
         arguments: Vec<Box<dyn Object>>,
-        name: Option<&Identifier>,
     ) -> Result<Box<dyn Object>, EvaluatorError> {
         if function.parameters.len() != arguments.len() {
             return Err(EvaluatorError::new(&format!(
@@ -302,24 +307,14 @@ impl Evaluator {
                 arguments.len()
             )));
         }
-        let mut env = if let Some(function_env) = function.env {
-            function_env
-        } else {
-            let mut env = Environment::new();
-            env.insert(
-                name.expect("Non closure function must have binding"),
-                function.clone(),
-            );
-            env
-        };
         function
             .parameters
             .iter()
             .zip(arguments)
             .for_each(|(param, arg)| {
-                env.insert(param, arg);
+                function.env.insert(param, arg);
             });
-        self.eval_block_statement(&function.body.statements, &mut env, true)
+        self.eval_block_statement(&function.body.statements, &mut function.env, true)
     }
 
     fn eval_prefix_expression(
@@ -444,9 +439,16 @@ impl Evaluator {
         let_statement: &LetStatement,
         env: &mut Environment,
     ) -> Result<Box<dyn Object>, EvaluatorError> {
-        let value = self.eval(let_statement.value.as_ref(), env)?;
-        env.insert(&let_statement.name, value);
-        Ok(Box::new(Null::new()))
+        if let_statement.rec {
+            env.insert(&let_statement.name, Box::new(SelfRef::new()));
+            let value = self.eval(let_statement.value.as_ref(), env)?;
+            env.insert(&let_statement.name, value);
+            Ok(Box::new(Null::new()))
+        } else {
+            let value = self.eval(let_statement.value.as_ref(), env)?;
+            env.insert(&let_statement.name, value);
+            Ok(Box::new(Null::new()))
+        }
     }
 
     fn eval_if_expression(

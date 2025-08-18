@@ -257,7 +257,9 @@ impl Evaluator {
                     if let Some(self_fn) = self.self_fn.clone() {
                         self.apply_function(self_fn, arguments)
                     } else {
-                        Err(EvaluatorError::new("Expected self_fn to be Some when evaluating recursive function"))
+                        Err(EvaluatorError::new(
+                            "Expected self_fn to be Some when evaluating recursive function",
+                        ))
                     }
                 } else if let Ok(function) = value.downcast::<Function>() {
                     let temp = self.self_fn.clone();

@@ -74,7 +74,6 @@ impl Lexer {
             }
             '\0' => Token::new(TokenType::Eof, ""),
             c => {
-                
                 if c.is_alphabetic() || Self::is_underscore(c) {
                     let word = self.read_word();
                     // Unread a character here because the functions used here (`read_word`, `read_number`)

@@ -119,17 +119,9 @@ impl Node for LetStatement {
 
     fn string(&self) -> String {
         if self.rec {
-            format!(
-                "let rec {} = {};",
-                self.name.string(),
-                self.value.string()
-            )
+            format!("let rec {} = {};", self.name.string(), self.value.string())
         } else {
-            format!(
-                "let {} = {};",
-                self.name.string(),
-                self.value.string()
-            )
+            format!("let {} = {};", self.name.string(), self.value.string())
         }
     }
 }

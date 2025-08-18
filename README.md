@@ -1,5 +1,3 @@
-# Monkey Programming Language Interpreter (and compiler)
-
 A simple interpreter (and compiler) for Donkey, a small scripting language written in Rust.
 
 ### Unsupported

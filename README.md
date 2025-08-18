@@ -1,5 +1,59 @@
 A simple interpreter (and compiler) for Donkey, a small scripting language written in Rust.
 
+### Sample code
+```
+println(123)
+
+let x = 5;
+let y = 10;
+let result = x + y;
+
+println(result)
+
+# This is a comment
+let rec factorial = fun(n) {
+	if (n == 1) {
+		return 1;
+	}
+	return n * factorial(n - 1);
+};
+
+let rec fib = fun(n) {
+	# This is another comment
+	if (n == 1) {
+		1
+	} else {
+		if (n == 2) {
+			1
+		} else {
+			fib(n - 1) + fib(n - 2)
+		} 
+	}
+};
+
+
+# Should print 797681364480000
+println(factorial(result) * fib(result))
+
+let map = fun(arr, f) {
+	let rec map_helper = fun(ret, arr, f, index) {
+		if index < len(arr) {
+			let item = f(arr[index]);
+			map_helper(push(ret, item), arr, f, index + 1)
+		} else {
+			ret
+		}
+	};
+
+	map_helper([], arr, f, 0)
+};
+
+let ret = map([1,2,100], fun(n) { n * n });
+
+# Should print [1,4, 10000]
+println(ret)
+```
+
 ### Unsupported
 - Strings
 - Maps

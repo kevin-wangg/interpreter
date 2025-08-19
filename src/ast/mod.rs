@@ -383,22 +383,23 @@ impl Expression for InfixExpression {}
 #[derive(Clone)]
 pub struct IfExpression {
     pub token: Token,
-    pub condition: Box<dyn Expression>,
-    pub consequence: BlockStatement,
+    pub consequences: Vec<(Box<dyn Expression>, BlockStatement)>,
     pub alternative: Option<BlockStatement>,
 }
 
 impl IfExpression {
     pub fn new(
         token: Token,
-        condition: Box<dyn Expression>,
-        consequence: BlockStatement,
+        consequences: Vec<(Box<dyn Expression>, BlockStatement)>,
         alternative: Option<BlockStatement>,
     ) -> Self {
+        assert!(
+            !consequences.is_empty(),
+            "IfExpression must have at least one consequence"
+        );
         Self {
             token,
-            condition,
-            consequence,
+            consequences,
             alternative,
         }
     }
@@ -414,23 +415,22 @@ impl Node for IfExpression {
     }
 
     fn string(&self) -> String {
-        match self.alternative.as_ref() {
-            Some(alternative) => {
-                format!(
-                    "if ({}) {} else {}",
-                    self.condition.string(),
-                    self.consequence.string(),
-                    alternative.string()
-                )
-            }
-            None => {
-                format!(
-                    "if ({}) {}",
-                    self.condition.string(),
-                    self.consequence.string(),
-                )
-            }
+        let mut ret = format!(
+            "if ({}) {}",
+            self.consequences[0].0.string(),
+            self.consequences[0].1.string()
+        );
+        for cons in self.consequences.iter().skip(1) {
+            ret.push_str(&format!(
+                " else if ({}) {}",
+                cons.0.string(),
+                cons.1.string()
+            ))
         }
+        if let Some(alternative) = self.alternative.as_ref() {
+            ret.push_str(&format!("else {}", alternative.string()));
+        }
+        ret
     }
 }
 

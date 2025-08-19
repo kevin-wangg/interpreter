@@ -137,9 +137,49 @@ fn if_expression() {
         .downcast_ref::<IfExpression>()
         .expect("Expected if expression");
 
-    assert_eq!(if_expression.condition.string(), "(x < y)");
-    assert_eq!(if_expression.consequence.string(), "{ return x; }");
+    assert_eq!(if_expression.consequences[0].0.string(), "(x < y)");
+    assert_eq!(if_expression.consequences[0].1.string(), "{ return x; }");
     assert!(if_expression.alternative.is_none());
+}
+
+#[test]
+fn if_else_if_expression() {
+    let input = "
+    if (x < y) { 
+        return x; 
+    } else if (x == y) {
+        return y;
+    } else { 
+        return y; 
+    }";
+    let lexer = Lexer::new(input);
+    let mut parser = Parser::new(lexer);
+
+    let program = parser.parse_program();
+    assert!(!has_parser_errors(&parser));
+    assert!(program.statements.len() == 1);
+
+    let statement = &program.statements[0];
+    let expression_statement = statement
+        .as_any()
+        .downcast_ref::<ExpressionStatement>()
+        .expect("Expected expression statement");
+
+    let if_expression = expression_statement
+        .expression
+        .as_any()
+        .downcast_ref::<IfExpression>()
+        .expect("Expected if expression");
+
+    assert_eq!(if_expression.consequences[0].0.string(), "(x < y)");
+    assert_eq!(if_expression.consequences[0].1.string(), "{ return x; }");
+    assert_eq!(if_expression.consequences[1].0.string(), "(x == y)");
+    assert_eq!(if_expression.consequences[1].1.string(), "{ return y; }");
+    assert!(if_expression.alternative.is_some());
+    assert_eq!(
+        if_expression.alternative.as_ref().unwrap().string(),
+        "{ return y; }"
+    );
 }
 
 #[test]
@@ -164,8 +204,8 @@ fn if_else_expression() {
         .downcast_ref::<IfExpression>()
         .expect("Expected if expression");
 
-    assert_eq!(if_expression.condition.string(), "(x < y)");
-    assert_eq!(if_expression.consequence.string(), "{ return x; }");
+    assert_eq!(if_expression.consequences[0].0.string(), "(x < y)");
+    assert_eq!(if_expression.consequences[0].1.string(), "{ return x; }");
     assert!(if_expression.alternative.is_some());
     assert_eq!(
         if_expression.alternative.as_ref().unwrap().string(),

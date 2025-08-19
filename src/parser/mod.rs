@@ -380,6 +380,8 @@ impl Parser {
         } else {
             return None;
         };
+
+        let mut consequences = Vec::new();
         // Brackets are optional around the if condition
         if self.peek_token.token_type == TokenType::LParen {
             self.next_token();
@@ -395,27 +397,35 @@ impl Parser {
         }
         let consequence = self.parse_block_statement()?;
 
-        if self.peek_token.token_type == TokenType::Else {
-            self.next_token();
-            if !self.expect_peek(TokenType::LBrace) {
-                self.expect_error(TokenType::LBrace);
-                return None;
+        consequences.push((condition, consequence));
+
+        while self.expect_peek(TokenType::Else) {
+            if self.expect_peek(TokenType::If) {
+                if self.peek_token.token_type == TokenType::LParen {
+                    self.next_token();
+                }
+                self.next_token();
+                let condition = self.parse_expression(Precedence::Lowest as i32)?;
+                if self.peek_token.token_type == TokenType::RParen {
+                    self.next_token();
+                }
+                if !self.expect_peek(TokenType::LBrace) {
+                    self.expect_error(TokenType::LBrace);
+                    return None;
+                }
+                let consequence = self.parse_block_statement()?;
+                consequences.push((condition, consequence));
+            } else if self.expect_peek(TokenType::LBrace) {
+                let alternative = self.parse_block_statement()?;
+                return Some(Box::new(IfExpression::new(
+                    token,
+                    consequences,
+                    Some(alternative),
+                )));
             }
-            let alternative = self.parse_block_statement()?;
-            Some(Box::new(IfExpression::new(
-                token,
-                condition,
-                consequence,
-                Some(alternative),
-            )))
-        } else {
-            Some(Box::new(IfExpression::new(
-                token,
-                condition,
-                consequence,
-                None,
-            )))
         }
+
+        Some(Box::new(IfExpression::new(token, consequences, None)))
     }
 
     fn parse_function_literal(&mut self) -> Option<Box<dyn Expression>> {

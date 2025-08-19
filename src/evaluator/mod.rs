@@ -458,13 +458,16 @@ impl Evaluator {
         if_expression: &IfExpression,
         env: &mut Environment,
     ) -> Result<Box<dyn Object>, EvaluatorError> {
-        let condition = self.eval(if_expression.condition.as_ref(), env)?;
-        if is_truthy(condition.as_ref()) {
-            self.eval(&if_expression.consequence, env)
-        } else if let Some(alternative) = if_expression.alternative.as_ref() {
+        for cons in &if_expression.consequences {
+            let condition = self.eval(cons.0.as_ref(), env)?;
+            if is_truthy(condition.as_ref()) {
+                return self.eval(&cons.1, env);
+            }
+        }
+        if let Some(alternative) = if_expression.alternative.as_ref() {
             self.eval(alternative, env)
         } else {
-            // If the if_expression has no else branch and the condition is falsey, then it evaluates to null
+            // If the if_expression has no else branch and all the conditions are falsey, then it evaluates to null
             Ok(Box::new(Null::new()))
         }
     }

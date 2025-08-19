@@ -1,0 +1,9 @@
+let foo = fun() {
+	if true {
+		1;
+	}
+	return 10;
+};
+
+println(foo());
+

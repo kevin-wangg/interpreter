@@ -18,12 +18,10 @@ let rec fib = fun(n) {
 	# This is another comment
 	if (n == 1) {
 		1
+	} else if (n == 2) {
+		1
 	} else {
-		if (n == 2) {
-			1
-		} else {
-			fib(n - 1) + fib(n - 2)
-		} 
+		fib(n - 1) + fib(n - 2)
 	}
 };
 

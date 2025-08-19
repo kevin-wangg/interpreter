@@ -349,6 +349,19 @@ fn test_eval(input: &str) -> Box<dyn Object> {
 }
 
 #[cfg(test)]
+fn expect_eval_error(input: &str) {
+    let lexer = Lexer::new(input);
+    let mut parser = Parser::new(lexer);
+    let program = parser.parse_program();
+    let mut evaluator = Evaluator::new();
+    let mut env = Environment::new();
+
+    if let Ok(val) = evaluator.eval(&program, &mut env) {
+        panic!("Expected error, got {}", val.inspect());
+    }
+}
+
+#[cfg(test)]
 fn test_integer_object(obj: &Box<dyn Object>, expected: i64) {
     if let Some(integer) = obj.as_any().downcast_ref::<Integer>() {
         assert_eq!(integer.value, expected, "Integer value mismatch");
@@ -515,5 +528,44 @@ fn array_literal_evaluation() {
     for (input, expected) in tests {
         let evaluated = test_eval(input);
         test_array_object(&evaluated, expected);
+    }
+}
+
+#[test]
+fn array_push() {
+    let tests = vec![
+        ("push([], 1)", "[1]"),
+        ("push([1], 1)", "[1, 1]"),
+        ("push([1, 2], 1)", "[1, 2, 1]"),
+    ];
+    for (input, expected) in tests {
+        let evaluated = test_eval(input);
+        test_array_object(&evaluated, expected);
+    }
+    let tests = vec!["push([])", "push(1, 1)", "push()", "push([], 1, 2)"];
+    for input in tests {
+        expect_eval_error(input);
+    }
+}
+
+#[test]
+fn array_tail() {
+    let tests = vec![("tail([1])", "[]"), ("tail([1, 2])", "[2]")];
+    for (input, expected) in tests {
+        let evaluated = test_eval(input);
+        test_array_object(&evaluated, expected);
+    }
+    let tests = vec!["tail([])", "tail(1)", "tail()", "tail([], 1)"];
+    for input in tests {
+        expect_eval_error(input);
+    }
+}
+
+#[test]
+fn array_len() {
+    let tests = vec![("len([])", 0), ("len([1])", 1), ("len([1,2,3])", 3)];
+    for (input, expected) in tests {
+        let evaluated = test_eval(input);
+        test_integer_object(&evaluated, expected);
     }
 }

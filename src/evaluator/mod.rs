@@ -98,6 +98,27 @@ impl Evaluator {
                 }
             }))),
         );
+        builtin_fns.insert(
+            "tail".to_string(),
+            Box::new(BuiltinFn::new(Rc::new(|args| {
+                if args.len() != 1 {
+                    Err(EvaluatorError::new("tail expects exactly one arguments"))
+                } else if let Some(array_expression) = args[0].as_any().downcast_ref::<Array>() {
+                    // Very inefficient since removing first element from Vec is O(n)
+                    let mut new_array_items = array_expression.items.clone();
+                    if new_array_items.is_empty() {
+                        Err(EvaluatorError::new("tail expects on a non-empty list"))
+                    } else {
+                        new_array_items.remove(0);
+                        Ok(Box::new(Array::new(new_array_items)))
+                    }
+                } else {
+                    Err(EvaluatorError::new(
+                        "tail expects the argument to be an array",
+                    ))
+                }
+            }))),
+        );
         Self {
             builtin_fns,
             self_fn: None,

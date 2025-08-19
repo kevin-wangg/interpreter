@@ -1,0 +1,56 @@
+let rec concat = fun(arr1, arr2) {
+	if len(arr2) == 0 {
+		arr1
+	} else {
+		let new_arr1 = push(arr1, arr2[0]);
+		concat(new_arr1, tail(arr2))
+	}
+};
+
+let a = [1,2,3];
+let b = [4,5,6];
+
+println(concat(a, b));
+
+let rec reverse = fun(arr) {
+	if len(arr) <= 1 {
+		arr
+	} else {
+		push(reverse(tail(arr)), arr[0])
+	}
+};
+
+let a = [1, 10, 100];
+println(a);
+println(reverse(a));
+
+let rec fold = fun(arr, f, acc) {
+	if len(arr) == 0 {
+		acc
+	} else {
+		let acc = f(acc, arr[0]);
+		fold(tail(arr), f, acc)
+	}
+};
+
+let a = [20, 40, 60, -100];
+let sum = fold(a, fun(a, b) { a + b }, 0);
+println(sum);
+
+let rec filter = fun(arr, f) {
+	if len(arr) == 0 {
+		arr
+	} else {
+		if f(arr[0]) {
+			concat([arr[0]], filter(tail(arr), f))
+		} else {
+			filter(tail(arr), f)
+		}
+	}
+};
+
+let a = [1,2,3,4,5];
+let is_even = fun(n) {
+	(n / 2) * 2 == n
+};
+println(filter(a, is_even));

@@ -61,10 +61,10 @@ fn run_repl() {
                 let mut parser = Parser::new(lexer);
                 let program = parser.parse_program();
                 if !has_parser_errors(&parser) {
-                    println!("Printing AST...");
-                    for statement in &program.statements {
-                        println!("{}", statement.string());
-                    }
+                    // println!("Printing AST...");
+                    // for statement in &program.statements {
+                    //     println!("{}", statement.string());
+                    // }
                     let mut evaluator = Evaluator::new();
                     match evaluator.eval(&program, &mut env) {
                         Ok(value) => {

@@ -647,3 +647,35 @@ impl Node for ArrayExpression {
 impl Expression for ArrayExpression {}
 
 // ========== Array expression End ==========
+
+// ========== String expression Start ==========
+
+#[derive(Clone)]
+pub struct StringExpression {
+    pub token: Token,
+    pub value: String,
+}
+
+impl StringExpression {
+    pub fn new(token: Token, value: String) -> Self {
+        Self { token, value }
+    }
+}
+
+impl Node for StringExpression {
+    fn token_literal(&self) -> String {
+        self.token.literal.clone()
+    }
+
+    fn as_any(&self) -> &dyn Any {
+        self
+    }
+
+    fn string(&self) -> String {
+        format!("\"{}\"", self.value)
+    }
+}
+
+impl Expression for StringExpression {}
+
+// ========== String expression End ==========

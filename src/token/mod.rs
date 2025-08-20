@@ -14,6 +14,8 @@ pub enum TokenType {
     RBrace,
     LSquare,
     RSquare,
+    DoubleQuotation,
+    StringValue,
     Function,
     Let,
     // Used in let rec statements
@@ -34,7 +36,6 @@ pub enum TokenType {
     GreaterEq,
     LessEq,
     Null,
-    Def,
 }
 
 #[derive(Clone, Debug)]

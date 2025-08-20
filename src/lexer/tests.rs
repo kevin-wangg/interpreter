@@ -66,6 +66,7 @@ fn test_next_token_complex() {
         let add = fun(x, y) {
             x + y;
         };
+        let s = \"bob\";
 
         let result = add(five, ten);
         !true;
@@ -111,6 +112,13 @@ fn test_next_token_complex() {
         TokenType::Ident,
         TokenType::Semicolon,
         TokenType::RBrace,
+        TokenType::Semicolon,
+        TokenType::Let,
+        TokenType::Ident,
+        TokenType::Assign,
+        TokenType::DoubleQuotation,
+        TokenType::StringValue,
+        TokenType::DoubleQuotation,
         TokenType::Semicolon,
         TokenType::Let,
         TokenType::Ident,
@@ -175,11 +183,12 @@ fn test_next_token_complex() {
 
     let expected_token_literals = vec![
         "let", "five", "=", "5", ";", "let", "ten", "=", "10", ";", "let", "add", "=", "fun", "(",
-        "x", ",", "y", ")", "{", "x", "+", "y", ";", "}", ";", "let", "result", "=", "add", "(",
-        "five", ",", "ten", ")", ";", "!", "true", ";", "5", "+", "12", "/", "10", "*", "2", ";",
-        "5", "<", "105", ";", "10", "==", "10", ";", "10", "!=", "9", ";", "5", "<=", "10", ";",
-        "10", ">=", "5", ";", "if", "(", "5", "<", "10", ")", "{", "return", "true", ";", "}",
-        "else", "{", "return", "false", ";", "}", "", // Eof literal is an empty string
+        "x", ",", "y", ")", "{", "x", "+", "y", ";", "}", ";", "let", "s", "=", "\"", "bob", "\"",
+        ";", "let", "result", "=", "add", "(", "five", ",", "ten", ")", ";", "!", "true", ";", "5",
+        "+", "12", "/", "10", "*", "2", ";", "5", "<", "105", ";", "10", "==", "10", ";", "10",
+        "!=", "9", ";", "5", "<=", "10", ";", "10", ">=", "5", ";", "if", "(", "5", "<", "10", ")",
+        "{", "return", "true", ";", "}", "else", "{", "return", "false", ";", "}",
+        "", // Eof literal is an empty string
     ];
 
     for i in 0..expected_token_types.len() {

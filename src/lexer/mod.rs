@@ -10,6 +10,7 @@ pub struct Lexer {
     // Always points to 1 ahead of `cur_position`
     read_position: usize,
     cur_char: char,
+    in_string: bool,
 }
 
 impl Lexer {
@@ -19,12 +20,17 @@ impl Lexer {
             cur_position: 0,
             read_position: 0,
             cur_char: '\0',
+            in_string: false,
         };
         lexer.read_char();
         lexer
     }
 
     pub fn next_token(&mut self) -> Token {
+        if self.in_string && self.cur_char != '"' {
+            let value = self.read_til_double_quotation();
+            return Token::new(TokenType::StringValue, &value);
+        }
         self.skip_whitespace_and_comments();
 
         let token = match self.cur_char {
@@ -43,6 +49,10 @@ impl Lexer {
             '}' => Token::new(TokenType::RBrace, "}"),
             '[' => Token::new(TokenType::LSquare, "["),
             ']' => Token::new(TokenType::RSquare, "]"),
+            '"' => {
+                self.in_string = !self.in_string;
+                Token::new(TokenType::DoubleQuotation, "\"")
+            }
             ',' => Token::new(TokenType::Comma, ","),
             ';' => Token::new(TokenType::Semicolon, ";"),
             '!' => {
@@ -173,7 +183,6 @@ impl Lexer {
         keywords.insert("else", TokenType::Else);
         keywords.insert("return", TokenType::Return);
         keywords.insert("null", TokenType::Null);
-        keywords.insert("def", TokenType::Def);
         *keywords.get(word).unwrap_or(&TokenType::Ident)
     }
 
@@ -202,5 +211,15 @@ impl Lexer {
         while self.cur_char != '\n' {
             self.read_char();
         }
+    }
+
+    // Advances characters until double quote is encountered. This is used to handle strings
+    fn read_til_double_quotation(&mut self) -> String {
+        let mut ret = String::new();
+        while self.cur_char != '"' {
+            ret.push(self.cur_char);
+            self.read_char();
+        }
+        ret
     }
 }

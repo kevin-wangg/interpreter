@@ -10,11 +10,11 @@ use crate::ast::{
     ArrayExpression, BlockStatement, BooleanLiteral, CallExpression, Expression,
     ExpressionStatement, FunctionLiteral, Identifier, IfExpression, IndexExpression,
     InfixExpression, IntegerLiteral, LetStatement, Node, NullLiteral, PrefixExpression, Program,
-    ReturnStatement, Statement,
+    ReturnStatement, Statement, StringExpression,
 };
 use crate::evaluator::environment::Environment;
 use crate::object::{
-    Array, Boolean, BuiltinFn, Function, Integer, Null, Object, ReturnValue, SelfRef,
+    Array, Boolean, BuiltinFn, Function, Integer, Null, Object, ReturnValue, SelfRef, StringObject,
 };
 
 #[derive(Debug)]
@@ -170,6 +170,8 @@ impl Evaluator {
             self.eval_if_expression(if_expression, env)
         } else if let Some(array_expression) = node.as_any().downcast_ref::<ArrayExpression>() {
             self.eval_array_expression(array_expression, env)
+        } else if let Some(string_expression) = node.as_any().downcast_ref::<StringExpression>() {
+            Ok(Box::new(StringObject::new(string_expression.value.clone())))
         } else if let Some(block_statement) = node.as_any().downcast_ref::<BlockStatement>() {
             let mut wrapped_env = Environment::new_wrapped(env);
             self.eval_block_statement(&block_statement.statements, &mut wrapped_env, false)

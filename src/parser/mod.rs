@@ -5,7 +5,7 @@ use std::collections::HashMap;
 use crate::ast::{
     ArrayExpression, BlockStatement, BooleanLiteral, CallExpression, Expression,
     ExpressionStatement, FunctionLiteral, IfExpression, IndexExpression, InfixExpression,
-    IntegerLiteral, NullLiteral, PrefixExpression, ReturnStatement,
+    IntegerLiteral, NullLiteral, PrefixExpression, ReturnStatement, StringExpression,
 };
 
 type PrefixParseFn = fn(&mut Parser) -> Option<Box<dyn Expression>>;
@@ -57,6 +57,9 @@ impl Parser {
         });
         parser
             .register_prefix_function(TokenType::LSquare, |parser| parser.parse_array_expression());
+        parser.register_prefix_function(TokenType::DoubleQuotation, |parser| {
+            parser.parse_string_expression()
+        });
         parser.register_prefix_function(TokenType::If, |parser| parser.parse_if_expression());
         parser.register_prefix_function(TokenType::Function, |parser| {
             parser.parse_function_literal()
@@ -532,6 +535,29 @@ impl Parser {
         }
         // cur_token points to the RSqaure here
         Some(Box::new(ArrayExpression::new(token, items)))
+    }
+
+    // When this function is called, cur_token should point to the starting DoubleQuotation.
+    // When it returns, cur_token should point to the ending DoubleQuotation.
+    fn parse_string_expression(&mut self) -> Option<Box<dyn Expression>> {
+        let token = if self.cur_token.token_type == TokenType::DoubleQuotation {
+            self.cur_token.clone()
+        } else {
+            return None;
+        };
+        let mut value = String::new();
+        if !self.expect_peek(TokenType::DoubleQuotation) {
+            self.next_token();
+            value = self.cur_token.literal.clone();
+            if self.expect_peek(TokenType::DoubleQuotation) {
+                Some(Box::new(StringExpression::new(token, value)))
+            } else {
+                self.expect_error(TokenType::DoubleQuotation);
+                None
+            }
+        } else {
+            Some(Box::new(StringExpression::new(token, value)))
+        }
     }
 
     fn no_prefix_function_error(&mut self, token_type: TokenType) {

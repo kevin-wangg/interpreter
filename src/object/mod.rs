@@ -65,6 +65,7 @@ impl Boolean {
 // ========== Boolean End ==========
 
 // ========== Array Start ==========
+
 #[derive(Clone)]
 pub struct Array {
     pub items: Vec<Box<dyn Object>>,
@@ -91,6 +92,33 @@ impl Array {
         Self { items }
     }
 }
+
+// ========== Array End ==========
+
+// ========== String Start ==========
+
+#[derive(Clone)]
+pub struct StringObject {
+    pub value: String,
+}
+
+impl Object for StringObject {
+    fn as_any(&self) -> &dyn Any {
+        self
+    }
+
+    fn inspect(&self) -> String {
+        format!("\"{}\"", self.value)
+    }
+}
+
+impl StringObject {
+    pub fn new(value: String) -> Self {
+        Self { value }
+    }
+}
+
+// ========== String End ==========
 
 // ========== Null Start ==========
 

@@ -1,4 +1,6 @@
 #[cfg(test)]
+use crate::ast::StringExpression;
+#[cfg(test)]
 use crate::ast::{
     ArrayExpression, BooleanLiteral, CallExpression, ExpressionStatement, FunctionLiteral,
     Identifier, IfExpression, IndexExpression, InfixExpression, IntegerLiteral, LetStatement, Node,
@@ -553,6 +555,38 @@ fn test_array_expressions() {
         for (i, expected_item) in expected_items.iter().enumerate() {
             assert_eq!(array_expression.items[i].string(), *expected_item);
         }
+    }
+}
+
+#[test]
+fn test_string_expression() {
+    let tests = vec![
+        (r#""hello""#, "hello"),
+        (
+            r#""123 random string !wowo! !@#12309""#,
+            "123 random string !wowo! !@#12309",
+        ),
+    ];
+
+    for (input, expected_value) in tests {
+        let lexer = Lexer::new(input);
+        let mut parser = Parser::new(lexer);
+        let program = parser.parse_program();
+        assert!(!has_parser_errors(&parser));
+        assert_eq!(program.statements.len(), 1);
+        let statement = &program.statements[0];
+        let expression_statement = statement
+            .as_any()
+            .downcast_ref::<ExpressionStatement>()
+            .expect("Expected expression statement");
+
+        let string_expression = expression_statement
+            .expression
+            .as_any()
+            .downcast_ref::<StringExpression>()
+            .expect("Expected string expression");
+
+        assert_eq!(string_expression.value, expected_value)
     }
 }
 

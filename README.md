@@ -1,4 +1,5 @@
-A simple interpreter (and compiler) for Donkey, a small scripting language written in Rust.
+A simple interpreter for Donkey, a small scripting language written in Rust. Inspired by *Writing an Interpreter in Go*
+# asdfasdf
 
 ### Sample code
 ```

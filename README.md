@@ -1,4 +1,4 @@
-A simple interpreter for Donkey, a small scripting language written in Rust. Inspired by *Writing an Interpreter in Go*
+A simple interpreter a small scripting language written in Rust. Inspired by *Writing an Interpreter in Go*
 
 ### Sample code
 ```

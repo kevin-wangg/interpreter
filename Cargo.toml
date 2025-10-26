@@ -1,5 +1,5 @@
 [package]
-name = "monkey_interpreter"
+name = "donkey-lang"
 version = "0.1.0"
 edition = "2024"
 

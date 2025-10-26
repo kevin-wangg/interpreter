@@ -8,4 +8,4 @@ let rec fibonacci = fun(n) {
 	}
 };
 
-println(fibonacci(8));
+println(fibonacci(50))

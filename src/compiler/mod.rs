@@ -32,8 +32,9 @@ impl Compiler {
         } else if let Some(integer_literal) = node.as_any().downcast_ref::<IntegerLiteral>() {
             let value = integer_literal.value;
             let index = self.add_constant(Rc::new(Integer::new(value)));
-            let instruction = make_instruction(OpCode::OpConstant, vec![index]);
-            self.instructions.extend_from_slice(&instruction);
+            self.add_instruction(make_instruction(OpCode::OpConstant, vec![index]));
+        } else {
+            return Err(CompilerError::new("Unknown node type"));
         }
 
         Ok(())
@@ -43,6 +44,11 @@ impl Compiler {
         self.constants.push(Rc::clone(&object));
         (self.constants.len() - 1) as u32
     }
+
+    fn add_instruction(&mut self, instruction: Vec<u8>) -> u32 {
+        self.instructions.extend_from_slice(&instruction);
+        (self.instructions.len() - 1) as u32
+    }
 }
 
 #[derive(Debug)]
@@ -51,8 +57,10 @@ struct CompilerError {
 }
 
 impl CompilerError {
-    fn new(error_message: String) -> Self {
-        Self { error_message }
+    fn new(error_message: &str) -> Self {
+        Self {
+            error_message: error_message.to_string(),
+        }
     }
 }
 
@@ -106,7 +114,7 @@ mod tests {
         );
         for (i, ins) in expected_instructions.into_iter().enumerate() {
             assert_eq!(
-                instructions[i], ins,
+                ins, instructions[i],
                 "Wrong instruction found at position {}. Wanted {}, got {}",
                 i, ins, instructions[i]
             );

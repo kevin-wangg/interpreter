@@ -1,9 +1,12 @@
+use std::rc::Rc;
+
 use crate::ast::{ExpressionStatement, InfixExpression, IntegerLiteral, Node, Program};
-use crate::object::Object;
+use crate::code::{OpCode, make_instruction};
+use crate::object::{Integer, Object};
 
 struct Compiler {
     instructions: Vec<u8>,
-    constants: Vec<Box<dyn Object>>,
+    constants: Vec<Rc<dyn Object>>,
 }
 
 impl Compiler {
@@ -14,18 +17,31 @@ impl Compiler {
         }
     }
 
-    fn compile(&mut self, node: Box<dyn Node>) -> Result<(), CompilerError> {
+    fn compile<T: Node + ?Sized>(&mut self, node: &T) -> Result<(), CompilerError> {
         if let Some(program) = node.as_any().downcast_ref::<Program>() {
-
-        } else if let Some(expression_statement) = node.as_any().downcast_ref::<ExpressionStatement>() {
-
+            for statement in &program.statements {
+                self.compile(statement.as_ref())?;
+            }
+        } else if let Some(expression_statement) =
+            node.as_any().downcast_ref::<ExpressionStatement>()
+        {
+            self.compile(expression_statement.expression.as_ref())?;
         } else if let Some(infix_expression) = node.as_any().downcast_ref::<InfixExpression>() {
-
+            self.compile(infix_expression.left.as_ref())?;
+            self.compile(infix_expression.right.as_ref())?;
         } else if let Some(integer_literal) = node.as_any().downcast_ref::<IntegerLiteral>() {
-
+            let value = integer_literal.value;
+            let index = self.add_constant(Rc::new(Integer::new(value)));
+            let instruction = make_instruction(OpCode::OpConstant, vec![index]);
+            self.instructions.extend_from_slice(&instruction);
         }
 
         Ok(())
+    }
+
+    fn add_constant(&mut self, object: Rc<dyn Object>) -> u32 {
+        self.constants.push(Rc::clone(&object));
+        (self.constants.len() - 1) as u32
     }
 }
 
@@ -42,16 +58,16 @@ impl CompilerError {
 
 #[cfg(test)]
 mod tests {
+    use super::*;
     use crate::ast::Program;
     use crate::code::{OpCode, make_instruction};
     use crate::lexer::Lexer;
     use crate::object::Integer;
     use crate::parser::Parser;
-    use super::*;
 
     struct CompilerTestCase {
         input: String,
-        expected_consts: Vec<Box<dyn Object>>,
+        expected_consts: Vec<Rc<dyn Object>>,
         expected_instructions: Vec<Vec<u8>>,
     }
 
@@ -59,7 +75,7 @@ mod tests {
     fn integer_arithmetric() {
         let tests = vec![CompilerTestCase {
             input: "1 + 2;".to_string(),
-            expected_consts: vec![Box::new(Integer::new(1)), Box::new(Integer::new(2))],
+            expected_consts: vec![Rc::new(Integer::new(1)), Rc::new(Integer::new(2))],
             expected_instructions: vec![
                 make_instruction(OpCode::OpConstant, vec![0]),
                 make_instruction(OpCode::OpConstant, vec![1]),
@@ -72,7 +88,7 @@ mod tests {
         for t in tests {
             let program = parse(t.input);
             let mut compiler = Compiler::new();
-            compiler.compile(Box::new(program)).expect("Compilation failed");
+            compiler.compile(&program).expect("Compilation failed");
 
             test_instructions(t.expected_instructions, compiler.instructions);
             test_constants(t.expected_consts, compiler.constants);
@@ -97,7 +113,7 @@ mod tests {
         }
     }
 
-    fn test_constants(expected_constants: Vec<Box<dyn Object>>, constants: Vec<Box<dyn Object>>) {
+    fn test_constants(expected_constants: Vec<Rc<dyn Object>>, constants: Vec<Rc<dyn Object>>) {
         assert_eq!(
             expected_constants.len(),
             constants.len(),
@@ -112,7 +128,7 @@ mod tests {
         }
     }
 
-    fn test_integer_object(expected: i64, actual: Box<dyn Object>) {
+    fn test_integer_object(expected: i64, actual: Rc<dyn Object>) {
         let actual = actual
             .as_any()
             .downcast_ref::<Integer>()
